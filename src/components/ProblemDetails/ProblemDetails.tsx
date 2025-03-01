@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Box, Typography, Grid, Paper, Divider } from '@mui/material';
+import { Box, Typography, Grid, Divider } from '@mui/material';
 
 interface ProblemDetailsProps {
   selectedProblem: string | null;

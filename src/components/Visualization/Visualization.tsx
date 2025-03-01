@@ -10,7 +10,6 @@ interface VisualizationProps {
   problem: string | null;
   algorithm: string | null;
   currentStep: number;
-  isRunning: boolean;
 }
 
 // Define a data point type for the function visualization
@@ -30,8 +29,7 @@ interface Individual {
 const Visualization: FC<VisualizationProps> = ({ 
   problem, 
   algorithm, 
-  currentStep, 
-  isRunning
+  currentStep
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const threeContainerRef = useRef<HTMLDivElement>(null);
@@ -46,7 +44,7 @@ const Visualization: FC<VisualizationProps> = ({
 
   // Handle view mode change
   const handleViewModeChange = (
-    event: React.MouseEvent<HTMLElement>,
+    _: React.MouseEvent<HTMLElement>,
     newViewMode: '2d' | '3d' | null,
   ) => {
     if (newViewMode !== null) {
@@ -703,29 +701,6 @@ const Visualization: FC<VisualizationProps> = ({
       (best, current) => current.fitness < best.fitness ? current : best,
       dummyPopulation[0]
     );
-    
-    // Define domain ranges based on problem type
-    let xRange = [-5, 5];
-    let yRange = [-5, 5];
-    
-    switch (problem) {
-      case 'rastrigin':
-        xRange = [-5.12, 5.12];
-        yRange = [-5.12, 5.12];
-        break;
-      case 'rosenbrock':
-        xRange = [-2, 2];
-        yRange = [-1, 3];
-        break;
-      case 'ackley':
-        xRange = [-5, 5];
-        yRange = [-5, 5];
-        break;
-      case 'schwefel222':
-        xRange = [-10, 10];
-        yRange = [-10, 10];
-        break;
-    }
     
     // Calculate function values for all points to determine z-scale
     const functionValues: number[] = [];

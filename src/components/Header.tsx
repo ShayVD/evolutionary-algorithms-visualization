@@ -11,14 +11,12 @@ import {
   Box, 
   IconButton, 
   Collapse,
-  Divider,
   Container,
   Paper,
   Stack
 } from '@mui/material';
 import { 
   Settings as SettingsIcon, 
-  Speed as SpeedIcon,
   Science as ScienceIcon
 } from '@mui/icons-material';
 

@@ -44,7 +44,7 @@ export function mapValueToRange(value: number, fromMin: number, fromMax: number,
 /**
  * Convert algorithm-specific values to visualization data
  */
-export function convertToVisualizationData(data: any, type: string): any {
+export function convertToVisualizationData(data: any, _type: string): any {
   // Implement conversion logic based on algorithm and visualization type
   return data;
 }

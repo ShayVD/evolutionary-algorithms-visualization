@@ -188,7 +188,6 @@ export class DifferentialEvolution implements Algorithm<number[]> {
    * Get random indices for mutation, excluding the target index
    */
   private getRandomIndices(popSize: number, excludeIndex: number, count: number): number[] {
-    const indices: number[] = [];
     const available = Array.from({ length: popSize }, (_, i) => i)
       .filter(i => i !== excludeIndex);
     

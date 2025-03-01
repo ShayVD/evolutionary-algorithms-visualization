@@ -49,11 +49,6 @@ const ProblemSelector: FC<ProblemSelectorProps> = ({ selectedProblem, onProblemC
     }
   }, [selectedProblem, onProblemChange, problems]);
 
-  // Get the selected problem's details
-  const selectedProblemDetails = selectedProblem 
-    ? problems.find(p => p.id === selectedProblem) 
-    : null;
-
   const handleChange = (event: SelectChangeEvent) => {
     onProblemChange(event.target.value);
   };

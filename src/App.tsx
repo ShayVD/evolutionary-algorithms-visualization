@@ -16,7 +16,6 @@ import {
   Alert, 
   AlertTitle, 
   Button, 
-  Divider,
   CssBaseline,
   ThemeProvider,
   createTheme
@@ -261,7 +260,6 @@ function App() {
                   problem={appState.selectedProblem}
                   algorithm={appState.selectedAlgorithm}
                   currentStep={appState.currentStep}
-                  isRunning={appState.isRunning}
                 />
               </Box>
             </Paper>

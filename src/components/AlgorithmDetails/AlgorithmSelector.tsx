@@ -43,11 +43,6 @@ const AlgorithmSelector: FC<AlgorithmSelectorProps> = ({ selectedAlgorithm, onAl
     }
   }, [selectedAlgorithm, onAlgorithmChange, algorithms]);
 
-  // Get the selected algorithm's details
-  const selectedAlgorithmDetails = selectedAlgorithm 
-    ? algorithms.find(a => a.id === selectedAlgorithm) 
-    : null;
-
   const handleChange = (event: SelectChangeEvent) => {
     onAlgorithmChange(event.target.value);
   };

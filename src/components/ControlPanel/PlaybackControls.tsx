@@ -1,7 +1,5 @@
 import { FC } from 'react';
 import { 
-  Button, 
-  ButtonGroup, 
   Slider, 
   Typography, 
   Box,
