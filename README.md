@@ -52,7 +52,7 @@ This project aims to create an engaging, educational platform for exploring evol
 ## Project Structure
 
 ```
-evolutionary-algorithms-visualisation/
+evolutionary-algorithms-visualization/
 ├── src/
 │   ├── components/            # React components
 │   │   ├── Header.tsx         # Top navigation bar with problem/algorithm selectors and controls
@@ -78,10 +78,10 @@ evolutionary-algorithms-visualisation/
 │   │       ├── AckleyFunction.ts
 │   │       └── Schwefel222Function.ts
 │   ├── utils/                 # Utility functions and hooks
-│   │   ├── visualization.ts
-│   │   └── hooks.ts
+│   │   ├── visualization.ts   # Visualization utility functions
+│   │   └── hooks.ts           # Custom React hooks
 │   ├── types/                 # TypeScript type definitions
-│   │   └── index.ts
+│   │   └── index.ts           # TypeScript type definitions
 │   ├── config/                # Configuration files
 │   │   ├── evolutionaryAlgorithms.json # Algorithm configurations
 │   │   └── optimizationFunctions.json  # Function configurations
@@ -91,6 +91,8 @@ evolutionary-algorithms-visualisation/
 │   ├── App.css                # App-specific styles
 │   └── index.css              # Global styles
 ├── public/                    # Static assets
+│   ├── science-icon.svg       # Science icon for the website favicon
+│   └── vite.svg               # Vite logo (default)
 ├── index.html                 # HTML entry point
 ├── package.json               # Dependencies and scripts
 ├── tsconfig.json              # TypeScript configuration
@@ -182,10 +184,10 @@ evolutionary-algorithms-visualisation/
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/evolutionary-algorithms-visualisation.git
+git clone https://github.com/ShayVD/evolutionary-algorithms-visualization.git
 
 # Navigate to the project directory
-cd evolutionary-algorithms-visualisation
+cd evolutionary-algorithms-visualization
 
 # Install dependencies
 npm install
