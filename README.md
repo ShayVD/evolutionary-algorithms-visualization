@@ -24,6 +24,7 @@ This project aims to create an engaging, educational platform for exploring evol
   - Evolution Strategy (ES)
   - Differential Evolution (DE)
   - Particle Swarm Optimization (PSO)
+  - Artificial Bee Colony (ABC)
   
 - **Real-time Visualization**:
   - Population diversity visualization
@@ -67,7 +68,8 @@ evolutionary-algorithms-visualization/
 │   │       ├── GeneticAlgorithm.ts
 │   │       ├── EvolutionStrategy.ts
 │   │       ├── DifferentialEvolution.ts
-│   │       └── ParticleSwarmOptimization.ts
+│   │       ├── ParticleSwarmOptimization.ts
+│   │       └── ArtificialBeeColony.ts
 │   ├── problems/              # Optimization problem definitions
 │   │   ├── Problem.ts         # Base problem interface
 │   │   ├── ContinuousFunctions.ts # Factory for creating function instances
@@ -151,6 +153,14 @@ evolutionary-algorithms-visualization/
 - Representation: Real-valued vectors with velocity
 - Movement: Based on personal and global best positions
 - Parameters: Inertia weight, cognitive/social coefficients
+
+### Artificial Bee Colony (ABC)
+- Representation: Real-valued vectors (food sources)
+- Phases: Employed bee, onlooker bee, and scout bee phases
+- Food Source Selection: Probability-based selection proportional to nectar amount
+- Neighborhood Search: Modification of solution components
+- Abandonment: Scout bees replace abandoned food sources
+- Parameters: Limit for abandonment, scaling factor for neighborhood search
 
 ## Problem Details
 
@@ -298,13 +308,26 @@ To add a new evolutionary algorithm to the project, follow these steps:
    }
    ```
 
-2. **Implement and Register the Algorithm**:
+2. **Create a Type Definition for Algorithm Parameters** (if needed):
+   - Open `src/types/index.ts`
+   - Add a new interface for your algorithm's specific parameters
+
+   ```typescript
+   // YourNewAlgorithm specific parameters
+   export interface YourNewAlgorithmParams extends AlgorithmParams {
+     specificParam1: number;
+     specificParam2: string;
+     // Add other algorithm-specific parameters
+   }
+   ```
+
+3. **Implement and Register the Algorithm**:
    - Create a new file in the `src/algorithms/implementations` directory (e.g., `YourNewAlgorithm.ts`)
    - Implement the `Algorithm` interface and register your algorithm
    
    ```typescript
    import { Algorithm } from '../Algorithm';
-   import { Individual, AlgorithmParams, AlgorithmStats } from '../../types';
+   import { Individual, AlgorithmParams, YourNewAlgorithmParams, AlgorithmStats } from '../../types';
    import { OptimizationProblem } from '../../types';
    import { registerAlgorithm } from '../AlgorithmFactory';
 
@@ -312,8 +335,45 @@ To add a new evolutionary algorithm to the project, follow these steps:
     * Your New Algorithm implementation
     */
    export class YourNewAlgorithm implements Algorithm<number[]> {
+     private params: YourNewAlgorithmParams;
+     private problem: OptimizationProblem;
+     private population: Individual<number[]>[] = [];
+     private best: Individual<number[]> | null = null;
+     private generation: number = 0;
+     private stats: AlgorithmStats;
+     
+     constructor(problem: OptimizationProblem) {
+       this.problem = problem;
+       this.params = {
+         populationSize: 50,
+         maxGenerations: 100,
+         specificParam1: 0.5,
+         specificParam2: "default"
+       };
+       
+       // Initialize stats
+       this.stats = {
+         currentGeneration: 0,
+         bestFitness: 0,
+         averageFitness: 0,
+         diversityMeasure: 0,
+         history: {
+           bestFitness: [],
+           averageFitness: [],
+           diversity: []
+         }
+       };
+     }
+     
      // Implement all required methods from the Algorithm interface
      // ...
+     
+     initialize(params: AlgorithmParams): void {
+       this.params = { ...this.params, ...params };
+       this.reset();
+     }
+     
+     // Implement other required methods...
    }
 
    // Register the algorithm with the factory
@@ -322,9 +382,9 @@ To add a new evolutionary algorithm to the project, follow these steps:
 
 That's it! The application will automatically:
 1. Load your algorithm file using the `filePath` specified in the configuration
-2. Register the algorithm in the algorithm selector
+2. Register the algorithm in the algorithm selector dropdown
 3. Display algorithm details in the algorithm details component
 4. Set up the controls for parameters
 5. Create instances when selected
 
-This modular approach eliminates the need to modify existing files when adding new algorithms, making the process as simple as possible. 
+The application uses a dynamic loading system that automatically discovers and loads algorithms based on the configuration file, so there's no need to modify any UI components when adding new algorithms. 

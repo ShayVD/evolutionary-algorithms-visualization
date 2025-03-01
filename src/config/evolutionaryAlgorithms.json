@@ -82,5 +82,24 @@
     },
     "icon": "🐦",
     "filePath": "./implementations/ParticleSwarmOptimization"
+  },
+  {
+    "id": "abc",
+    "name": "Artificial Bee Colony",
+    "description": "A swarm-based metaheuristic algorithm inspired by the foraging behavior of honey bees, consisting of employed bees, onlooker bees, and scout bees.",
+    "keyFeatures": [
+      "Inspired by the intelligent foraging behavior of honey bees",
+      "Balances exploration and exploitation effectively",
+      "Self-organizing and decentralized system",
+      "Robust for multimodal and complex optimization problems"
+    ],
+    "defaultParameters": {
+      "populationSize": 40,
+      "maxGenerations": 100,
+      "limit": 20,
+      "scalingFactor": 0.5
+    },
+    "icon": "🐝",
+    "filePath": "./implementations/ArtificialBeeColony"
   }
 ] 

@@ -47,6 +47,12 @@ export interface ParticleSwarmParams extends AlgorithmParams {
   neighborhoodSize?: number; // Size of neighborhood for ring topology
 }
 
+// Artificial Bee Colony specific parameters
+export interface ArtificialBeeColonyParams extends AlgorithmParams {
+  limit: number; // Maximum number of trials before abandoning a food source
+  scalingFactor: number; // Scaling factor for neighborhood search
+}
+
 // Algorithm statistics for visualization and monitoring
 export interface AlgorithmStats {
   currentGeneration: number;

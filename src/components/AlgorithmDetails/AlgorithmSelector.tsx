@@ -1,5 +1,6 @@
-import { FC, useEffect } from 'react';
-import { FormControl, InputLabel, Select, MenuItem, Typography, SelectChangeEvent } from '@mui/material';
+import { FC, useEffect, useState } from 'react';
+import { FormControl, InputLabel, Select, MenuItem, Typography, SelectChangeEvent, CircularProgress } from '@mui/material';
+import { getAvailableAlgorithms } from '../../algorithms/AlgorithmFactory';
 
 interface AlgorithmSelectorProps {
   selectedAlgorithm: string | null;
@@ -7,34 +8,25 @@ interface AlgorithmSelectorProps {
 }
 
 const AlgorithmSelector: FC<AlgorithmSelectorProps> = ({ selectedAlgorithm, onAlgorithmChange }) => {
-  // Available algorithms for selection
-  const algorithms = [
-    { 
-      id: 'genetic-algorithm', 
-      name: 'Genetic Algorithm', 
-      description: 'A metaheuristic inspired by natural selection',
-      icon: '🧬' // DNA icon representing genetics
-    },
-    { 
-      id: 'evolution-strategy', 
-      name: 'Evolution Strategy', 
-      description: 'Self-adaptive search focused on mutation',
-      icon: '🔄' // Represents adaptation and mutation
-    },
-    { 
-      id: 'differential-evolution', 
-      name: 'Differential Evolution', 
-      description: 'Uses vector differences for mutation',
-      icon: '↔️' // Represents vector differences
-    },
-    { 
-      id: 'particle-swarm', 
-      name: 'Particle Swarm Optimization', 
-      description: 'Inspired by social behavior of bird flocking',
-      icon: '🐦' // Bird representing swarm behavior
-    },
-    // Add more algorithms as needed
-  ];
+  const [algorithms, setAlgorithms] = useState<{ id: string; name: string; description: string; icon: string }[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Fetch available algorithms from the factory
+  useEffect(() => {
+    const fetchAlgorithms = async () => {
+      try {
+        setLoading(true);
+        const availableAlgorithms = await getAvailableAlgorithms();
+        setAlgorithms(availableAlgorithms);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching algorithms:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchAlgorithms();
+  }, []);
 
   // Auto-select first algorithm if none is selected
   useEffect(() => {
@@ -46,6 +38,10 @@ const AlgorithmSelector: FC<AlgorithmSelectorProps> = ({ selectedAlgorithm, onAl
   const handleChange = (event: SelectChangeEvent) => {
     onAlgorithmChange(event.target.value);
   };
+
+  if (loading) {
+    return <CircularProgress size={24} />;
+  }
 
   return (
     <div>
