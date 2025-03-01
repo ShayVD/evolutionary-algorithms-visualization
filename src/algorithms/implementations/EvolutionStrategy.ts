@@ -1,6 +1,7 @@
-import { Algorithm } from './Algorithm';
-import { Individual, AlgorithmParams, AlgorithmStats, EvolutionStrategyParams } from '../types';
-import { OptimizationProblem } from '../types';
+import { Algorithm } from '../Algorithm';
+import { Individual, AlgorithmParams, AlgorithmStats, EvolutionStrategyParams } from '../../types';
+import { OptimizationProblem } from '../../types';
+import { registerAlgorithm } from '../AlgorithmFactory';
 
 /**
  * Evolution Strategy implementation for continuous optimization
@@ -309,4 +310,7 @@ export class EvolutionStrategy implements Algorithm<number[]> {
     // Simple convergence check: if diversity is very low
     return this.stats.diversityMeasure < 1e-6;
   }
-} 
+}
+
+// Register the algorithm with the registry
+registerAlgorithm('es', EvolutionStrategy); 

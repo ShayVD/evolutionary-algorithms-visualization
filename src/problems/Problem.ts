@@ -1,45 +1,43 @@
 import { OptimizationProblem } from '../types';
 
 /**
- * Base abstract class for optimization problems
+ * Base Problem class that all optimization problems inherit from
  */
-export abstract class Problem implements OptimizationProblem {
+export class Problem implements OptimizationProblem {
+  id: string;
   name: string;
   description: string;
   dimension: number;
   bounds: [number, number][];
   isMinimization: boolean;
-  
+
   constructor(
+    id: string,
     name: string,
     description: string,
     dimension: number,
     bounds: [number, number][],
-    isMinimization: boolean = true
+    isMinimization: boolean
   ) {
+    this.id = id;
     this.name = name;
     this.description = description;
     this.dimension = dimension;
     this.bounds = bounds;
     this.isMinimization = isMinimization;
   }
-  
-  /**
-   * Evaluate a solution and return its fitness value
-   * Must be implemented by specific problem classes
-   */
-  abstract evaluate(solution: any): number;
-  
-  /**
-   * Generate a random solution within the problem bounds
-   */
-  generateRandomSolution(): number[] {
-    const solution: number[] = [];
-    for (let i = 0; i < this.dimension; i++) {
-      const [min, max] = this.bounds[i];
-      solution.push(min + Math.random() * (max - min));
+
+  evaluate(solution: number[]): number {
+    if (solution.length !== this.dimension) {
+      throw new Error(`Solution dimension (${solution.length}) does not match problem dimension (${this.dimension})`);
     }
-    return solution;
+    
+    // This is a base implementation that should be overridden by subclasses
+    throw new Error('evaluate() method must be implemented by subclasses');
+  }
+  
+  generateRandomSolution(): number[] {
+    return this.bounds.map(([min, max]) => min + Math.random() * (max - min));
   }
   
   /**

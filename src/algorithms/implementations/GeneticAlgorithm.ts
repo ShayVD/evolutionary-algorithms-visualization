@@ -1,6 +1,7 @@
-import { Algorithm } from './Algorithm';
-import { Individual, AlgorithmParams, AlgorithmStats, GeneticAlgorithmParams } from '../types';
-import { OptimizationProblem } from '../types';
+import { Algorithm } from '../Algorithm';
+import { Individual, AlgorithmParams, AlgorithmStats, GeneticAlgorithmParams } from '../../types';
+import { OptimizationProblem } from '../../types';
+import { registerAlgorithm } from '../AlgorithmFactory';
 
 /**
  * Genetic Algorithm implementation for continuous optimization
@@ -431,4 +432,7 @@ export class GeneticAlgorithm implements Algorithm<number[]> {
     
     return Math.sqrt(sum);
   }
-} 
+}
+
+// Register the algorithm with the registry
+registerAlgorithm('ga', GeneticAlgorithm); 

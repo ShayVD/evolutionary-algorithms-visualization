@@ -1,6 +1,7 @@
-import { Algorithm } from './Algorithm';
-import { Individual, AlgorithmParams, AlgorithmStats } from '../types';
-import { OptimizationProblem } from '../types';
+import { Algorithm } from '../Algorithm';
+import { Individual, AlgorithmParams, AlgorithmStats } from '../../types';
+import { OptimizationProblem } from '../../types';
+import { registerAlgorithm } from '../AlgorithmFactory';
 
 /**
  * Interface for Differential Evolution specific parameters
@@ -372,4 +373,7 @@ export class DifferentialEvolution implements Algorithm<number[]> {
     // Simple convergence check: if diversity is very low
     return this.stats.diversityMeasure < 1e-6;
   }
-} 
+}
+
+// Register the algorithm with the registry
+registerAlgorithm('de', DifferentialEvolution); 

@@ -3,50 +3,35 @@
  */
 
 import { OptimizationProblem } from '../types';
-import { SphereFunction, RastriginFunction, RosenbrockFunction, AckleyFunction, SchwefelProblem222 } from '../problems/ContinuousFunctions';
-import { GeneticAlgorithm } from '../algorithms/GeneticAlgorithm';
-import { EvolutionStrategy } from '../algorithms/EvolutionStrategy';
-import { DifferentialEvolution } from '../algorithms/DifferentialEvolution';
-import { ParticleSwarmOptimization } from '../algorithms/ParticleSwarmOptimization';
+import { createProblemFromConfig } from '../problems/ContinuousFunctions';
+import { createAlgorithm as createAlgorithmFromFactory } from '../algorithms/AlgorithmFactory';
 import { Algorithm } from '../algorithms/Algorithm';
 
 /**
  * Create an optimization problem instance based on the problem ID
  */
-export function createProblem(problemId: string, dimension: number = 2): OptimizationProblem | null {
-  switch (problemId) {
-    case 'sphere':
-      return new SphereFunction(dimension);
-    case 'rastrigin':
-      return new RastriginFunction(dimension);
-    case 'rosenbrock':
-      return new RosenbrockFunction(dimension);
-    case 'ackley':
-      return new AckleyFunction(dimension);
-    case 'schwefel222':
-      return new SchwefelProblem222(dimension);
-    default:
-      return null;
-  }
+export async function createProblem(problemId: string, dimension: number = 2): Promise<OptimizationProblem | null> {
+  // Use the centralized function to create problems from config
+  return await createProblemFromConfig(problemId, dimension);
 }
 
 /**
  * Create an algorithm instance based on the algorithm ID and problem
  */
-export function createAlgorithm(algorithmId: string, problem: OptimizationProblem): Algorithm<any> | null {
-  switch (algorithmId) {
-    case 'genetic-algorithm':
-      return new GeneticAlgorithm(problem);
-    case 'evolution-strategy':
-      return new EvolutionStrategy(problem);
-    case 'differential-evolution':
-      return new DifferentialEvolution(problem);
-    case 'particle-swarm':
-      return new ParticleSwarmOptimization(problem);
-    // Other algorithms would be added here as they are implemented
-    default:
-      return null;
-  }
+export async function createAlgorithm(algorithmId: string, problem: OptimizationProblem): Promise<Algorithm<any> | null> {
+  // Map old algorithm IDs to new ones if necessary
+  const algorithmIdMap: Record<string, string> = {
+    'genetic-algorithm': 'ga',
+    'evolution-strategy': 'es',
+    'differential-evolution': 'de',
+    'particle-swarm': 'pso'
+  };
+  
+  // Use the mapped ID or the original if not in the map
+  const mappedId = algorithmIdMap[algorithmId] || algorithmId;
+  
+  // Use the centralized function to create algorithms from config
+  return await createAlgorithmFromFactory(mappedId, problem);
 }
 
 /**

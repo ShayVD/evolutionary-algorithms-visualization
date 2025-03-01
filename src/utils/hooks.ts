@@ -24,22 +24,29 @@ export function useEvolutionarySimulation(
   // Initialize or update the problem and algorithm when selections change
   useEffect(() => {
     if (problemId && algorithmId) {
-      // Create the optimization problem
-      const newProblem = createProblem(problemId);
-      setProblem(newProblem);
+      // Create the optimization problem and algorithm - handle async
+      (async () => {
+        try {
+          // Create the optimization problem
+          const newProblem = await createProblem(problemId);
+          setProblem(newProblem);
 
-      if (newProblem) {
-        // Create the algorithm with the problem
-        const newAlgorithm = createAlgorithm(algorithmId, newProblem);
-        setAlgorithm(newAlgorithm);
+          if (newProblem) {
+            // Create the algorithm with the problem
+            const newAlgorithm = await createAlgorithm(algorithmId, newProblem);
+            setAlgorithm(newAlgorithm);
 
-        if (newAlgorithm) {
-          // Initialize the algorithm with the parameters
-          newAlgorithm.initialize(params);
-          setStats(newAlgorithm.getStats());
-          setStep(0);
+            if (newAlgorithm) {
+              // Initialize the algorithm with the parameters
+              newAlgorithm.initialize(params);
+              setStats(newAlgorithm.getStats());
+              setStep(0);
+            }
+          }
+        } catch (error) {
+          console.error('Error initializing problem or algorithm:', error);
         }
-      }
+      })();
     } else {
       setAlgorithm(null);
       setProblem(null);

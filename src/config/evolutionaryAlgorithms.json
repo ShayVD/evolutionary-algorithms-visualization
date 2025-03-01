@@ -1,0 +1,86 @@
+[
+  {
+    "id": "ga",
+    "name": "Genetic Algorithm",
+    "description": "A search heuristic inspired by the process of natural selection that belongs to the class of evolutionary algorithms.",
+    "keyFeatures": [
+      "Based on natural selection principles",
+      "Uses crossover and mutation operators",
+      "Suitable for both continuous and discrete problems",
+      "Easy to implement and understand"
+    ],
+    "defaultParameters": {
+      "populationSize": 50,
+      "maxGenerations": 100,
+      "crossoverRate": 0.8,
+      "mutationRate": 0.1,
+      "selectionMethod": "tournament",
+      "tournamentSize": 3,
+      "elitism": 1
+    },
+    "icon": "🧬",
+    "filePath": "./implementations/GeneticAlgorithm"
+  },
+  {
+    "id": "es",
+    "name": "Evolution Strategy",
+    "description": "An optimization technique based on ideas of adaptation and evolution, particularly suitable for continuous parameter optimization.",
+    "keyFeatures": [
+      "Self-adaptive mutation parameters",
+      "Used for real-valued optimization problems",
+      "Supports (μ,λ) and (μ+λ) selection strategies",
+      "Handles constraints effectively"
+    ],
+    "defaultParameters": {
+      "populationSize": 30,
+      "maxGenerations": 100,
+      "offspringSize": 60,
+      "selectionStrategy": "comma",
+      "initialStepSize": 1.0,
+      "adaptationFactor": 0.7
+    },
+    "icon": "🔄",
+    "filePath": "./implementations/EvolutionStrategy"
+  },
+  {
+    "id": "de",
+    "name": "Differential Evolution",
+    "description": "A stochastic population-based optimization algorithm that is well-suited to continuous optimization problems.",
+    "keyFeatures": [
+      "Simple but powerful global optimization algorithm", 
+      "Few control parameters",
+      "Fast convergence",
+      "Works well on multimodal, non-differentiable, and noisy functions"
+    ],
+    "defaultParameters": {
+      "populationSize": 50,
+      "maxGenerations": 100,
+      "scalingFactor": 0.5,
+      "crossoverRate": 0.7,
+      "strategy": "rand/1/bin"
+    },
+    "icon": "⚡",
+    "filePath": "./implementations/DifferentialEvolution"
+  },
+  {
+    "id": "pso",
+    "name": "Particle Swarm Optimization",
+    "description": "A computational method that optimizes a problem by iteratively trying to improve candidate solutions based on particle movement.",
+    "keyFeatures": [
+      "Inspired by social behavior of bird flocking or fish schooling",
+      "Particles move in solution space guided by personal and global best",
+      "Simple implementation with few parameters",
+      "Effective for continuous optimization problems"
+    ],
+    "defaultParameters": {
+      "populationSize": 40,
+      "maxGenerations": 100,
+      "inertiaWeight": 0.72,
+      "cognitiveCoefficient": 1.49,
+      "socialCoefficient": 1.49,
+      "maxVelocity": 4.0
+    },
+    "icon": "🐦",
+    "filePath": "./implementations/ParticleSwarmOptimization"
+  }
+] 

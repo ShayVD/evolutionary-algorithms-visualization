@@ -62,18 +62,29 @@ evolutionary-algorithms-visualisation/
 │   │   └── AlgorithmDetails/  # Details and selector for the selected algorithm
 │   ├── algorithms/            # Evolutionary algorithm implementations
 │   │   ├── Algorithm.ts       # Base algorithm interface
-│   │   ├── GeneticAlgorithm.ts
-│   │   ├── EvolutionStrategy.ts
-│   │   ├── DifferentialEvolution.ts
-│   │   └── ParticleSwarmOptimization.ts
+│   │   ├── AlgorithmFactory.ts # Factory for creating algorithm instances
+│   │   └── implementations/   # Individual algorithm implementations
+│   │       ├── GeneticAlgorithm.ts
+│   │       ├── EvolutionStrategy.ts
+│   │       ├── DifferentialEvolution.ts
+│   │       └── ParticleSwarmOptimization.ts
 │   ├── problems/              # Optimization problem definitions
 │   │   ├── Problem.ts         # Base problem interface
-│   │   └── ContinuousFunctions.ts
+│   │   ├── ContinuousFunctions.ts # Factory for creating function instances
+│   │   └── implementations/   # Individual function implementations
+│   │       ├── SphereFunction.ts
+│   │       ├── RastriginFunction.ts
+│   │       ├── RosenbrockFunction.ts
+│   │       ├── AckleyFunction.ts
+│   │       └── Schwefel222Function.ts
 │   ├── utils/                 # Utility functions and hooks
 │   │   ├── visualization.ts
 │   │   └── hooks.ts
 │   ├── types/                 # TypeScript type definitions
 │   │   └── index.ts
+│   ├── config/                # Configuration files
+│   │   ├── evolutionaryAlgorithms.json # Algorithm configurations
+│   │   └── optimizationFunctions.json  # Function configurations
 │   ├── assets/                # Static assets for the application
 │   ├── main.tsx               # Application entry point
 │   ├── App.tsx                # Main App component
@@ -195,297 +206,123 @@ This section provides guidance on how to extend the project by adding new optimi
 
 To add a new optimization function to the project, follow these steps:
 
-1. **Implement the Function Class**:
-   - Open `src/problems/ContinuousFunctions.ts`
-   - Create a new class that extends the `Problem` class
-   - Implement the required methods, especially the `evaluate` method
+1. **Update the Functions Configuration File**:
+   - Open `src/config/optimizationFunctions.json`
+   - Add your new function to the JSON array
 
    Example:
+   ```json
+   {
+     "id": "your-function-id",
+     "name": "Your Function Name",
+     "description": "A description of your function including its characteristics and global optimum.",
+     "formula": "f(x) = ... (your formula)",
+     "bounds": [-10, 10],
+     "defaultDimension": 2,
+     "isMinimization": true,
+     "globalOptimum": {
+       "position": [0, 0],
+       "value": 0
+     },
+     "visualization": {
+       "xRange": [-10, 10],
+       "yRange": [-10, 10],
+       "zRange": [0, 100],
+       "colorScheme": "viridis"
+     },
+     "icon": "🔍",
+     "filePath": "./implementations/YourFunction"
+   }
+   ```
+
+2. **Create and Register the Function Implementation**:
+   - Create a new file in the `src/problems/implementations` directory (e.g., `YourFunction.ts`)
+   - Implement and register your function
+
    ```typescript
+   import { registerFunction } from '../ContinuousFunctions';
+
    /**
-    * Implementation of Your New Function
-    * f(x) = ... (your function definition)
-    * Global minimum at (...) with f(x) = ...
+    * Your function implementation
+    * f(x) = ... (your formula)
+    * 
+    * A description of your function's characteristics
     */
-   export class YourNewFunction extends Problem {
-     constructor(dimension: number = 2) {
-       super(
-         'Your Function Name',
-         'A description of your function',
-         dimension,
-         Array(dimension).fill([-10, 10]), // Define appropriate bounds
-         true // true for minimization, false for maximization
-       );
-     }
-     
-     evaluate(solution: number[]): number {
-       // Implement your function evaluation logic here
-       // Example:
-       return solution.reduce((sum, value) => sum + Math.pow(value, 4), 0);
-     }
+   export function yourFunction(solution: number[]): number {
+     // Implement your function evaluation logic here
+     // Example:
+     return solution.reduce((sum, value) => sum + Math.pow(value, 4), 0);
    }
+
+   // Register the function with the registry
+   registerFunction('your-function-id', yourFunction);
    ```
 
-2. **Register the Function in the Visualization Utility**:
-   - Open `src/utils/visualization.ts`
-   - Import your new function class
-   - Add a case for your function in the `createProblem` function
-   
-   ```typescript
-   import { YourNewFunction } from '../problems/ContinuousFunctions';
-   
-   export function createProblem(problemId: string, dimension: number = 2): OptimizationProblem | null {
-     switch (problemId) {
-       // Existing cases...
-       case 'your-function-id':
-         return new YourNewFunction(dimension);
-       default:
-         return null;
-     }
-   }
-   ```
+That's it! The application will automatically use the configuration from the JSON file and the registered function evaluator to:
+- Register the function in the problem selector
+- Set up the visualization with appropriate ranges
+- Display function details in the problem details component
+- Configure the evaluation logic for the optimization process
 
-3. **Add the Function to the Visualization Component**:
-   - Open `src/components/Visualization/Visualization.tsx`
-   - Add your function to the switch statements that handle problem types
-   - Implement the visualization logic for your function
-   
-   ```typescript
-   // In the switch statements that create visualizations
-   case 'your-function-id':
-     create2DFunctionVisualization(problem);
-     break;
-   
-   // In the function that calculates z values
-   case 'your-function-id':
-     z = // Your function calculation for visualization
-     break;
-   
-   // In the domain range definition
-   case 'your-function-id':
-     xRange = [-10, 10]; // Appropriate range for your function
-     yRange = [-10, 10];
-     break;
-   ```
-
-4. **Add the Function to the Problem Details Component**:
-   - Open `src/components/ProblemDetails/ProblemDetails.tsx`
-   - Add your function to the `problemDetails` object
-   
-   ```typescript
-   'your-function-id': {
-     title: 'Your Function Name',
-     description: 'Description of your function including its characteristics and global optimum.',
-     config: (
-       <Box sx={{ mt: 2 }}>
-         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>Configuration</Typography>
-         <Grid container spacing={2}>
-           <Grid item xs={6}>
-             <Typography variant="caption" color="text.secondary">Dimensions</Typography>
-             <Typography variant="body2">2</Typography>
-           </Grid>
-           <Grid item xs={6}>
-             <Typography variant="caption" color="text.secondary">Search Range</Typography>
-             <Typography variant="body2">[-10, 10]</Typography>
-           </Grid>
-           <Grid item xs={12}>
-             <Typography variant="caption" color="text.secondary">Formula</Typography>
-             <Typography variant="body2">f(x) = ... (your formula)</Typography>
-           </Grid>
-         </Grid>
-       </Box>
-     )
-   }
-   ```
-
-5. **Add the Function to the Problem Selector**:
-   - Open `src/components/ProblemDetails/ProblemSelector.tsx`
-   - Add your function to the `problems` array
-   
-   ```typescript
-   { 
-     id: 'your-function-id', 
-     name: 'Your Function Name', 
-     description: 'Brief description of your function',
-     icon: '🔍' // Choose an appropriate emoji
-   }
-   ```
+This modular approach eliminates the need to modify existing files when adding new functions, making the process as simple as possible.
 
 ### Adding a New Evolutionary Algorithm
 
 To add a new evolutionary algorithm to the project, follow these steps:
 
-1. **Implement the Algorithm Class**:
-   - Create a new file in the `src/algorithms` directory (e.g., `YourNewAlgorithm.ts`)
-   - Implement the `Algorithm` interface
-   - Define algorithm-specific parameters interface if needed
-   
-   Example:
-   ```typescript
-   import { Algorithm } from './Algorithm';
-   import { Individual, AlgorithmParams, AlgorithmStats } from '../types';
-   import { OptimizationProblem } from '../types';
+1. **Update the Algorithms Configuration File**:
+   - Open `src/config/evolutionaryAlgorithms.json`
+   - Add your new algorithm to the JSON array
 
-   /**
-    * Interface for your algorithm's specific parameters
-    */
-   export interface YourAlgorithmParams extends AlgorithmParams {
-     specificParam1: number;
-     specificParam2: string;
-     // Add other parameters as needed
+   Example:
+   ```json
+   {
+     "id": "your-algorithm-id",
+     "name": "Your Algorithm Name",
+     "description": "A description of how your algorithm works and its key characteristics.",
+     "keyFeatures": [
+       "Feature 1 of your algorithm",
+       "Feature 2 of your algorithm",
+       "Feature 3 of your algorithm"
+     ],
+     "defaultParameters": {
+       "populationSize": 50,
+       "maxGenerations": 100,
+       "specificParam1": 0.5,
+       "specificParam2": "default"
+     },
+     "icon": "🧬",
+     "filePath": "./implementations/YourNewAlgorithm"
    }
+   ```
+
+2. **Implement and Register the Algorithm**:
+   - Create a new file in the `src/algorithms/implementations` directory (e.g., `YourNewAlgorithm.ts`)
+   - Implement the `Algorithm` interface and register your algorithm
+   
+   ```typescript
+   import { Algorithm } from '../Algorithm';
+   import { Individual, AlgorithmParams, AlgorithmStats } from '../../types';
+   import { OptimizationProblem } from '../../types';
+   import { registerAlgorithm } from '../AlgorithmFactory';
 
    /**
     * Your New Algorithm implementation
     */
    export class YourNewAlgorithm implements Algorithm<number[]> {
-     private params: YourAlgorithmParams;
-     private problem: OptimizationProblem;
-     private population: Individual<number[]>[] = [];
-     private best: Individual<number[]> | null = null;
-     private generation: number = 0;
-     private stats: AlgorithmStats;
-     
-     constructor(problem: OptimizationProblem) {
-       this.problem = problem;
-       this.params = {
-         populationSize: 50,
-         maxGenerations: 100,
-         specificParam1: 0.5,
-         specificParam2: 'default'
-         // Initialize with default values
-       };
-       
-       this.stats = {
-         currentGeneration: 0,
-         bestFitness: 0,
-         averageFitness: 0,
-         diversityMeasure: 0,
-         history: {
-           bestFitness: [],
-           averageFitness: [],
-           diversity: []
-         }
-       };
-     }
-     
      // Implement all required methods from the Algorithm interface
-     initialize(params: AlgorithmParams): void {
-       // Implementation
-     }
-     
-     initializePopulation(): Individual<number[]>[] {
-       // Implementation
-     }
-     
-     step(): void {
-       // Implementation of one generation/iteration
-     }
-     
-     // Implement other required methods...
+     // ...
    }
+
+   // Register the algorithm with the factory
+   registerAlgorithm('your-algorithm-id', YourNewAlgorithm);
    ```
 
-2. **Update the Types File**:
-   - Open `src/types/index.ts`
-   - Add your algorithm's parameters interface
-   
-   ```typescript
-   // Your Algorithm specific parameters
-   export interface YourAlgorithmParams extends AlgorithmParams {
-     specificParam1: number;
-     specificParam2: string;
-     // Add other parameters as needed
-   }
-   ```
+That's it! The application will automatically:
+1. Load your algorithm file using the `filePath` specified in the configuration
+2. Register the algorithm in the algorithm selector
+3. Display algorithm details in the algorithm details component
+4. Set up the controls for parameters
+5. Create instances when selected
 
-3. **Register the Algorithm in the Visualization Utility**:
-   - Open `src/utils/visualization.ts`
-   - Import your new algorithm class
-   - Add a case for your algorithm in the `createAlgorithm` function
-   
-   ```typescript
-   import { YourNewAlgorithm } from '../algorithms/YourNewAlgorithm';
-   
-   export function createAlgorithm(algorithmId: string, problem: OptimizationProblem): Algorithm<any> | null {
-     switch (algorithmId) {
-       // Existing cases...
-       case 'your-algorithm-id':
-         return new YourNewAlgorithm(problem);
-       default:
-         return null;
-     }
-   }
-   ```
-
-4. **Add the Algorithm to the Algorithm Details Component**:
-   - Open `src/components/AlgorithmDetails/AlgorithmDetails.tsx`
-   - Add your algorithm to the component's details object
-   
-   ```typescript
-   'your-algorithm-id': {
-     title: 'Your Algorithm Name',
-     description: 'Description of how your algorithm works and its key characteristics.',
-     config: (
-       <Box sx={{ mt: 2 }}>
-         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>Key Features</Typography>
-         <ul>
-           <li>Feature 1 of your algorithm</li>
-           <li>Feature 2 of your algorithm</li>
-           <li>Feature 3 of your algorithm</li>
-         </ul>
-       </Box>
-     )
-   }
-   ```
-
-5. **Add the Algorithm to the Algorithm Selector**:
-   - Open `src/components/AlgorithmDetails/AlgorithmSelector.tsx`
-   - Add your algorithm to the `algorithms` array
-   
-   ```typescript
-   { 
-     id: 'your-algorithm-id', 
-     name: 'Your Algorithm Name', 
-     description: 'Brief description of your algorithm',
-     icon: '🧬' // Choose an appropriate emoji
-   }
-   ```
-
-6. **Create Parameter Controls for Your Algorithm**:
-   - Open or create the appropriate file in `src/components/ControlPanel`
-   - Implement controls for your algorithm's specific parameters
-   
-   ```typescript
-   // Example parameter control component
-   const YourAlgorithmControls: FC<AlgorithmControlsProps> = ({ params, onParamChange }) => {
-     const handleSpecificParam1Change = (value: number) => {
-       onParamChange({
-         ...params,
-         specificParam1: value
-       });
-     };
-     
-     return (
-       <Box>
-         <Typography variant="subtitle2">Your Algorithm Parameters</Typography>
-         <Slider
-           value={params.specificParam1 || 0.5}
-           onChange={(_, value) => handleSpecificParam1Change(value as number)}
-           min={0}
-           max={1}
-           step={0.01}
-           valueLabelDisplay="auto"
-           aria-labelledby="specific-param-1-slider"
-         />
-         <Typography id="specific-param-1-slider">
-           Specific Parameter 1: {params.specificParam1 || 0.5}
-         </Typography>
-         
-         {/* Add more parameter controls as needed */}
-       </Box>
-     );
-   };
-   ```
-
-By following these steps, you can extend the project with new optimization functions and evolutionary algorithms while maintaining consistency with the existing codebase. 
+This modular approach eliminates the need to modify existing files when adding new algorithms, making the process as simple as possible. 

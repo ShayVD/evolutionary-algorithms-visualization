@@ -1,0 +1,107 @@
+[
+  {
+    "id": "sphere",
+    "name": "Sphere Function",
+    "description": "A simple, continuous, convex, and unimodal function widely used as a benchmark for optimization algorithms.",
+    "formula": "f(x) = Σ x_i²",
+    "bounds": [-5.12, 5.12],
+    "defaultDimension": 2,
+    "isMinimization": true,
+    "globalOptimum": {
+      "position": [0, 0],
+      "value": 0
+    },
+    "visualization": {
+      "xRange": [-5.12, 5.12],
+      "yRange": [-5.12, 5.12],
+      "zRange": [0, 50],
+      "colorScheme": "viridis"
+    },
+    "icon": "🔵",
+    "filePath": "./implementations/SphereFunction"
+  },
+  {
+    "id": "rastrigin",
+    "name": "Rastrigin Function",
+    "description": "A highly multimodal function with many local minima, making it challenging for optimization algorithms to find the global optimum.",
+    "formula": "f(x) = 10n + Σ [x_i² - 10cos(2πx_i)]",
+    "bounds": [-5.12, 5.12],
+    "defaultDimension": 2,
+    "isMinimization": true,
+    "globalOptimum": {
+      "position": [0, 0],
+      "value": 0
+    },
+    "visualization": {
+      "xRange": [-5.12, 5.12],
+      "yRange": [-5.12, 5.12],
+      "zRange": [0, 80],
+      "colorScheme": "plasma"
+    },
+    "icon": "🌋",
+    "filePath": "./implementations/RastriginFunction"
+  },
+  {
+    "id": "rosenbrock",
+    "name": "Rosenbrock Function",
+    "description": "A non-convex function with a narrow valley. Finding the valley is trivial, but converging to the global minimum is difficult.",
+    "formula": "f(x) = Σ [100(x_{i+1} - x_i²)² + (x_i - 1)²]",
+    "bounds": [-2.048, 2.048],
+    "defaultDimension": 2,
+    "isMinimization": true,
+    "globalOptimum": {
+      "position": [1, 1],
+      "value": 0
+    },
+    "visualization": {
+      "xRange": [-2, 2],
+      "yRange": [-1, 3],
+      "zRange": [0, 2500],
+      "colorScheme": "magma"
+    },
+    "icon": "🏔️",
+    "filePath": "./implementations/RosenbrockFunction"
+  },
+  {
+    "id": "ackley",
+    "name": "Ackley Function",
+    "description": "A multimodal function characterized by a nearly flat outer region and a large hole at the center. It has many local minima but only one global minimum.",
+    "formula": "f(x) = -20exp(-0.2√(Σ x_i²/n)) - exp(Σ cos(2πx_i)/n) + 20 + e",
+    "bounds": [-32.768, 32.768],
+    "defaultDimension": 2,
+    "isMinimization": true,
+    "globalOptimum": {
+      "position": [0, 0],
+      "value": 0
+    },
+    "visualization": {
+      "xRange": [-32.768, 32.768],
+      "yRange": [-32.768, 32.768],
+      "zRange": [0, 25],
+      "colorScheme": "cividis"
+    },
+    "icon": "🌀",
+    "filePath": "./implementations/AckleyFunction"
+  },
+  {
+    "id": "schwefel222",
+    "name": "Schwefel Problem 2.22",
+    "description": "A unimodal function that combines the sum and product of absolute values, providing a unique optimization challenge.",
+    "formula": "f(x) = Σ |x_i| + Π |x_i|",
+    "bounds": [-10, 10],
+    "defaultDimension": 2,
+    "isMinimization": true,
+    "globalOptimum": {
+      "position": [0, 0],
+      "value": 0
+    },
+    "visualization": {
+      "xRange": [-10, 10],
+      "yRange": [-10, 10],
+      "zRange": [0, 100],
+      "colorScheme": "inferno"
+    },
+    "icon": "🔍",
+    "filePath": "./implementations/Schwefel222Function"
+  }
+] 
