@@ -25,6 +25,7 @@ This project aims to create an engaging, educational platform for exploring evol
   - Differential Evolution (DE)
   - Particle Swarm Optimization (PSO)
   - Artificial Bee Colony (ABC)
+  - Simulated Annealing (SA)
   
 - **Real-time Visualization**:
   - Population diversity visualization
@@ -69,7 +70,8 @@ evolutionary-algorithms-visualization/
 │   │       ├── EvolutionStrategy.ts
 │   │       ├── DifferentialEvolution.ts
 │   │       ├── ParticleSwarmOptimization.ts
-│   │       └── ArtificialBeeColony.ts
+│   │       ├── ArtificialBeeColony.ts
+│   │       └── SimulatedAnnealing.ts
 │   ├── problems/              # Optimization problem definitions
 │   │   ├── Problem.ts         # Base problem interface
 │   │   ├── ContinuousFunctions.ts # Factory for creating function instances
@@ -161,6 +163,14 @@ evolutionary-algorithms-visualization/
 - Neighborhood Search: Modification of solution components
 - Abandonment: Scout bees replace abandoned food sources
 - Parameters: Limit for abandonment, scaling factor for neighborhood search
+
+### Simulated Annealing (SA)
+- Representation: Single solution (state)
+- Temperature: Controls probability of accepting worse solutions
+- Cooling Schedule: Gradually reduces temperature over time
+- Neighborhood Function: Generates candidate solutions near current state
+- Acceptance Criterion: Probabilistic acceptance based on Boltzmann distribution
+- Parameters: Initial temperature, cooling rate, neighborhood size
 
 ## Problem Details
 

@@ -53,6 +53,14 @@ export interface ArtificialBeeColonyParams extends AlgorithmParams {
   scalingFactor: number; // Scaling factor for neighborhood search
 }
 
+// Simulated Annealing specific parameters
+export interface SimulatedAnnealingParams extends AlgorithmParams {
+  initialTemperature: number; // Starting temperature
+  coolingRate: number; // Rate at which temperature decreases
+  neighborhoodSize: number; // Size of neighborhood for generating new solutions
+  minTemperature: number; // Minimum temperature for termination
+}
+
 // Algorithm statistics for visualization and monitoring
 export interface AlgorithmStats {
   currentGeneration: number;

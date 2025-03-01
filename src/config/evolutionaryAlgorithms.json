@@ -101,5 +101,26 @@
     },
     "icon": "🐝",
     "filePath": "./implementations/ArtificialBeeColony"
+  },
+  {
+    "id": "sa",
+    "name": "Simulated Annealing",
+    "description": "A probabilistic technique for approximating the global optimum, inspired by the annealing process in metallurgy.",
+    "keyFeatures": [
+      "Can escape local optima through probabilistic acceptance of worse solutions",
+      "Gradually decreases exploration in favor of exploitation",
+      "Simple to implement with few parameters",
+      "Effective for complex, multimodal landscapes"
+    ],
+    "defaultParameters": {
+      "populationSize": 1,
+      "maxGenerations": 1000,
+      "initialTemperature": 100.0,
+      "coolingRate": 0.95,
+      "neighborhoodSize": 0.1,
+      "minTemperature": 0.01
+    },
+    "icon": "🔥",
+    "filePath": "./implementations/SimulatedAnnealing"
   }
 ] 
