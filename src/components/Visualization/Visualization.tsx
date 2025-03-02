@@ -457,10 +457,10 @@ const Visualization: FC<VisualizationProps> = ({
     
     console.log('Final population size for visualization:', populationData.length);
 
-    // Get the best individual (lowest fitness for minimization problems)
+    // Get the best individual (highest fitness for maximization problems)
     const bestIndividual = populationData.length > 0 ? 
       populationData.reduce(
-        (best, current) => current.fitness < best.fitness ? current : best,
+        (best, current) => current.fitness > best.fitness ? current : best,
         populationData[0]
       ) : null;
     
@@ -794,10 +794,10 @@ const Visualization: FC<VisualizationProps> = ({
     
     console.log('Final 3D population size for visualization:', populationData.length);
 
-    // Get the best individual (lowest fitness for minimization problems)
+    // Get the best individual (highest fitness for maximization problems)
     const bestIndividual = populationData.length > 0 ? 
       populationData.reduce(
-        (best, current) => current.fitness < best.fitness ? current : best,
+        (best, current) => current.fitness > best.fitness ? current : best,
         populationData[0]
       ) : null;
     
