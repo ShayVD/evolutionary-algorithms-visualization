@@ -18,7 +18,8 @@ import {
   Button, 
   CssBaseline,
   ThemeProvider,
-  createTheme
+  createTheme,
+  Link
 } from '@mui/material'
 import { createProblem } from './utils/visualization'
 
@@ -320,7 +321,15 @@ function App() {
         <Box component="footer" sx={{ bgcolor: 'grey.800', color: 'white', p: 2, mt: 4 }}>
           <Container>
             <Typography variant="body2" align="center">
-              Evolutionary Algorithm Visualization &copy; {new Date().getFullYear()}
+              Evolutionary Algorithm Visualization &copy; {new Date().getFullYear()} | 
+              <Link 
+                href="https://github.com/ShayVD/evolutionary-algorithms-visualization" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                sx={{ color: 'white', ml: 1, textDecoration: 'underline' }}
+              >
+                GitHub
+              </Link>
             </Typography>
           </Container>
         </Box>
