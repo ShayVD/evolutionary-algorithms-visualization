@@ -2,20 +2,21 @@
   {
     "id": "sphere",
     "name": "Sphere Function",
-    "description": "A simple, continuous, convex, and unimodal function widely used as a benchmark for optimization algorithms.",
-    "formula": "f(x) = Σ x_i²",
+    "description": "A simple quadratic function with a global minimum at the origin. It is continuous, convex, and unimodal.",
+    "formula": "f(x) = \\sum_{i=1}^{n} x_i^2",
     "bounds": [-5.12, 5.12],
     "defaultDimension": 2,
     "isMinimization": true,
     "globalOptimum": {
-      "position": [0, 0],
+      "point": [0, 0],
       "value": 0
     },
     "visualization": {
-      "xRange": [-5.12, 5.12],
-      "yRange": [-5.12, 5.12],
+      "xRange": [-5, 5],
+      "yRange": [-5, 5],
       "zRange": [0, 50],
-      "colorScheme": "viridis"
+      "colorScheme": "viridis",
+      "formula2D": "x*x + y*y"
     },
     "icon": "🔵",
     "filePath": "SphereFunction"
@@ -23,20 +24,21 @@
   {
     "id": "rastrigin",
     "name": "Rastrigin Function",
-    "description": "A highly multimodal function with many local minima, making it challenging for optimization algorithms to find the global optimum.",
-    "formula": "f(x) = 10n + Σ [x_i² - 10cos(2πx_i)]",
+    "description": "A non-convex function with many local minima. It's challenging for optimization algorithms due to its large search space and numerous local optima.",
+    "formula": "f(x) = 10n + \\sum_{i=1}^{n} [x_i^2 - 10\\cos(2\\pi x_i)]",
     "bounds": [-5.12, 5.12],
     "defaultDimension": 2,
     "isMinimization": true,
     "globalOptimum": {
-      "position": [0, 0],
+      "point": [0, 0],
       "value": 0
     },
     "visualization": {
       "xRange": [-5.12, 5.12],
       "yRange": [-5.12, 5.12],
-      "zRange": [0, 80],
-      "colorScheme": "plasma"
+      "zRange": [0, 100],
+      "colorScheme": "plasma",
+      "formula2D": "20 + (x*x - 10*Math.cos(2*Math.PI*x)) + (y*y - 10*Math.cos(2*Math.PI*y))"
     },
     "icon": "🌋",
     "filePath": "RastriginFunction"
@@ -44,20 +46,21 @@
   {
     "id": "rosenbrock",
     "name": "Rosenbrock Function",
-    "description": "A non-convex function with a narrow valley. Finding the valley is trivial, but converging to the global minimum is difficult.",
-    "formula": "f(x) = Σ [100(x_{i+1} - x_i²)² + (x_i - 1)²]",
+    "description": "A non-convex function with a narrow valley that leads to the global minimum. The valley is easy to find but converging to the global minimum is difficult.",
+    "formula": "f(x) = \\sum_{i=1}^{n-1} [100(x_{i+1} - x_i^2)^2 + (1 - x_i)^2]",
     "bounds": [-2.048, 2.048],
     "defaultDimension": 2,
     "isMinimization": true,
     "globalOptimum": {
-      "position": [1, 1],
+      "point": [1, 1],
       "value": 0
     },
     "visualization": {
       "xRange": [-2, 2],
       "yRange": [-1, 3],
       "zRange": [0, 2500],
-      "colorScheme": "magma"
+      "colorScheme": "magma",
+      "formula2D": "100*Math.pow(y - x*x, 2) + Math.pow(1 - x, 2)"
     },
     "icon": "🏔️",
     "filePath": "RosenbrockFunction"
@@ -65,20 +68,21 @@
   {
     "id": "ackley",
     "name": "Ackley Function",
-    "description": "A multimodal function characterized by a nearly flat outer region and a large hole at the center. It has many local minima but only one global minimum.",
-    "formula": "f(x) = -20exp(-0.2√(Σ x_i²/n)) - exp(Σ cos(2πx_i)/n) + 20 + e",
+    "description": "A multimodal function characterized by a nearly flat outer region and a central hole or peak where the global optimum is located.",
+    "formula": "f(x) = -20\\exp(-0.2\\sqrt{\\frac{1}{n}\\sum_{i=1}^{n} x_i^2}) - \\exp(\\frac{1}{n}\\sum_{i=1}^{n}\\cos(2\\pi x_i)) + 20 + e",
     "bounds": [-32.768, 32.768],
     "defaultDimension": 2,
     "isMinimization": true,
     "globalOptimum": {
-      "position": [0, 0],
+      "point": [0, 0],
       "value": 0
     },
     "visualization": {
-      "xRange": [-32.768, 32.768],
-      "yRange": [-32.768, 32.768],
+      "xRange": [-5, 5],
+      "yRange": [-5, 5],
       "zRange": [0, 25],
-      "colorScheme": "cividis"
+      "colorScheme": "inferno",
+      "formula2D": "-20*Math.exp(-0.2*Math.sqrt(0.5*(x*x + y*y))) - Math.exp(0.5*(Math.cos(2*Math.PI*x) + Math.cos(2*Math.PI*y))) + Math.E + 20"
     },
     "icon": "🌀",
     "filePath": "AckleyFunction"
@@ -86,22 +90,67 @@
   {
     "id": "schwefel222",
     "name": "Schwefel Problem 2.22",
-    "description": "A unimodal function that combines the sum and product of absolute values, providing a unique optimization challenge.",
-    "formula": "f(x) = Σ |x_i| + Π |x_i|",
+    "description": "A unimodal function that is non-differentiable at its global minimum, which is at the origin.",
+    "formula": "f(x) = \\sum_{i=1}^{n}|x_i| + \\prod_{i=1}^{n}|x_i|",
     "bounds": [-10, 10],
     "defaultDimension": 2,
     "isMinimization": true,
     "globalOptimum": {
-      "position": [0, 0],
+      "point": [0, 0],
       "value": 0
     },
     "visualization": {
       "xRange": [-10, 10],
       "yRange": [-10, 10],
-      "zRange": [0, 100],
-      "colorScheme": "inferno"
+      "zRange": [0, 40],
+      "colorScheme": "cividis",
+      "formula2D": "Math.abs(x) + Math.abs(y) + (Math.abs(x) * Math.abs(y))"
     },
     "icon": "🔍",
     "filePath": "Schwefel222Function"
+  },
+  {
+    "id": "schwefel12",
+    "name": "Schwefel Problem 1.2",
+    "description": "A continuous, unimodal function that is more difficult to optimize due to strong interdependency among variables.",
+    "formula": "f(x) = \\sum_{i=1}^{n} (\\sum_{j=1}^{i} x_j)^2",
+    "bounds": [-100, 100],
+    "defaultDimension": 2,
+    "isMinimization": true,
+    "globalOptimum": {
+      "point": [0, 0],
+      "value": 0
+    },
+    "visualization": {
+      "xRange": [-100, 100],
+      "yRange": [-100, 100],
+      "zRange": [0, 20000],
+      "colorScheme": "turbo",
+      "formula2D": "Math.pow(x, 2) + Math.pow(x + y, 2)"
+    },
+    "icon": "🧠",
+    "filePath": "SchwefelProblem12Function"
+  },
+  {
+    "id": "step",
+    "name": "Step Function",
+    "description": "A function with a minimum value at positions where all components are between -0.5 and 0.5.",
+    "formula": "f(x) = \\sum_{i=1}^{n} (|x_i + 0.5|)^2",
+    "bounds": [-100, 100],
+    "defaultDimension": 30,
+    "isMinimization": true,
+    "globalOptimum": {
+      "point": [-0.5, -0.5],
+      "value": 0
+    },
+    "visualization": {
+      "xRange": [-100, 100],
+      "yRange": [-100, 100],
+      "zRange": [0, 100],
+      "colorScheme": "turbo",
+      "formula2D": "Math.pow(Math.abs(x + 0.5), 2) + Math.pow(Math.abs(y + 0.5), 2)"
+    },
+    "icon": "🪜",
+    "filePath": "StepFunction"
   }
 ] 

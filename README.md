@@ -261,20 +261,27 @@ To add a new optimization function to the project, follow these steps:
      "defaultDimension": 2,
      "isMinimization": true,
      "globalOptimum": {
-       "position": [0, 0],
+       "point": [0, 0],
        "value": 0
      },
      "visualization": {
        "xRange": [-10, 10],
        "yRange": [-10, 10],
        "zRange": [0, 100],
-       "colorScheme": "viridis"
+       "colorScheme": "viridis",
+       "formula2D": "x*x + y*y"
      },
      "icon": "🔍",
      "filePath": "YourFunction"
    }
    ```
 
+   **Important Notes**:
+   - The `point` property in `globalOptimum` should represent the position of the optimum for a 2D version
+   - Make sure `xRange` and `yRange` in the visualization are appropriate for showing the interesting parts of your function
+   - The `formula2D` is crucial for visualization - it should be valid JavaScript code that calculates the function value for 2D coordinates (x,y)
+   - Choose distinctive `colorScheme` values like "viridis", "plasma", "inferno", "magma", "cividis", or "turbo"
+   
 2. **Create and Register the Function Implementation**:
    - Create a new file in the `src/problems/implementations` directory (e.g., `YourFunction.ts`)
    - Implement and register your function
@@ -297,6 +304,9 @@ To add a new optimization function to the project, follow these steps:
    // Register the function with the registry
    registerFunction('your-function-id', yourFunction);
    ```
+
+   **Important Notes**:
+   - The `registerFunction` call must use the same `id` as specified in the JSON configuration file
 
 That's it! The application will automatically use the configuration from the JSON file and the registered function evaluator to:
 - Register the function in the problem selector
