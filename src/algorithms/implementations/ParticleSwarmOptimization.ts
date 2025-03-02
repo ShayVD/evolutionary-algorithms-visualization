@@ -445,8 +445,17 @@ export class ParticleSwarmOptimization implements Algorithm<number[]> {
    * Check if the algorithm has converged
    */
   hasConverged(): boolean {
-    // Simple convergence check: if diversity is very low
-    return this.stats.diversityMeasure < 1e-6;
+    // Check if maximum iterations reached
+    if (this.iteration >= this.params.maxGenerations) {
+      return true;
+    }
+    
+    // Check if diversity is very low
+    if (this.stats.diversityMeasure < 1e-6) {
+      return true;
+    }
+    
+    return false;
   }
 }
 
