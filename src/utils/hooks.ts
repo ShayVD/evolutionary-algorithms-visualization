@@ -1,143 +1,126 @@
 import { useState, useEffect, useRef } from 'react';
+import { createAlgorithm } from '../algorithms/AlgorithmFactory';
+import { Problem } from '../problems/Problem';
 import { Algorithm } from '../algorithms/Algorithm';
-import { OptimizationProblem } from '../types';
-import { createProblem, createAlgorithm } from './visualization';
 import { AlgorithmParams, AlgorithmStats } from '../types';
 
 /**
  * Custom hook for managing the evolutionary algorithm simulation
  */
 export function useEvolutionarySimulation(
-  problemId: string | null,
-  algorithmId: string | null,
+  selectedAlgorithmId: string,
   params: AlgorithmParams,
+  problemInstance: Problem | null,
   isRunning: boolean,
   speed: number
-) {
-  const [algorithm, setAlgorithm] = useState<Algorithm<any> | null>(null);
-  const [problem, setProblem] = useState<OptimizationProblem | null>(null);
-  const [stats, setStats] = useState<AlgorithmStats | null>(null);
-  const [step, setStep] = useState<number>(0);
+): {
+  algorithm: Algorithm<number[]> | null;
+  problem: Problem | null;
+  stats: AlgorithmStats | null;
+  step: number;
+  performStep: () => void;
+  resetAlgorithm: () => void;
+} {
+  // References for animation
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateTimeRef = useRef<number>(0);
+  
+  // Track current parameters for comparison
+  const prevParamsRef = useRef<AlgorithmParams>(params);
+  
+  // Algorithm instance
+  const [algorithm, setAlgorithm] = useState<Algorithm<number[]> | null>(null);
+  const [problem, setProblem] = useState<Problem | null>(problemInstance);
+  const [stats, setStats] = useState<AlgorithmStats | null>(null);
+  const [step, setStep] = useState<number>(0);
 
-  // Initialize or update the problem and algorithm when selections change
+  // Update problem when it changes
   useEffect(() => {
-    if (problemId && algorithmId) {
-      // Create the optimization problem and algorithm - handle async
-      (async () => {
-        try {
-          // Create the optimization problem
-          const newProblem = await createProblem(problemId);
-          setProblem(newProblem);
+    setProblem(problemInstance);
+  }, [problemInstance]);
 
-          if (newProblem) {
-            // Create the algorithm with the problem
-            const newAlgorithm = await createAlgorithm(algorithmId, newProblem);
-            setAlgorithm(newAlgorithm);
-
-            if (newAlgorithm) {
-              // Initialize the algorithm with the parameters
-              newAlgorithm.initialize(params);
-              
-              // Immediately initialize the population to ensure data is available
-              newAlgorithm.initializePopulation();
-              console.log('Initial population size:', newAlgorithm.getPopulation().length);
-              
-              setStats(newAlgorithm.getStats());
-              setStep(0);
-            }
-          }
-        } catch (error) {
-          console.error('Error initializing problem or algorithm:', error);
-        }
-      })();
-    } else {
+  // Initialize or update algorithm when selection changes
+  useEffect(() => {
+    // Skip initialization if algorithm ID is empty or problem is null
+    if (!selectedAlgorithmId || !problem) {
+      console.log('Skipping algorithm initialization: missing ID or problem');
       setAlgorithm(null);
-      setProblem(null);
-      setStats(null);
-      setStep(0);
+      return;
     }
-
-    // Cleanup animation on changes
-    return () => {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
+    
+    console.log('Algorithm changed, initializing with params:', params);
+    
+    // Create the algorithm asynchronously
+    (async () => {
+      try {
+        const newAlgorithm = await createAlgorithm(selectedAlgorithmId, problem);
+        
+        if (newAlgorithm) {
+          newAlgorithm.initialize(params);
+          newAlgorithm.initializePopulation();
+          setStats(newAlgorithm.getStats());
+          setStep(0);
+          setAlgorithm(newAlgorithm);
+          prevParamsRef.current = params;
+        }
+      } catch (error) {
+        console.error('Error creating algorithm:', error);
       }
-    };
-  }, [problemId, algorithmId]);
+    })();
+    
+  }, [selectedAlgorithmId, problem]);
 
-  // Handle parameter updates for existing algorithm
+  // Handle parameter changes
   useEffect(() => {
-    if (algorithm) {
-      // Debug: log parameter changes
-      console.log('Parameter change detected:', params);
-      
-      // Stop any running animation first
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      
-      // Update algorithm with new parameters in a specific order
-      algorithm.setParams(params);
-      
-      // Force a complete reset and reinitialize
+    if (!algorithm) return;
+    
+    // Only proceed if there are actual changes
+    const hasParamChanges = JSON.stringify(params) !== JSON.stringify(prevParamsRef.current);
+    if (!hasParamChanges) return;
+    
+    console.log('Parameters changed:', params);
+    
+    // Check for population size change that requires re-initialization
+    const needsReset = 
+      params.populationSize !== prevParamsRef.current.populationSize || 
+      params.maxGenerations !== prevParamsRef.current.maxGenerations;
+    
+    // Apply new parameters
+    algorithm.setParams(params);
+    
+    // If population size changed or other critical parameters, reset the algorithm
+    if (needsReset) {
+      console.log('Critical parameter changed, resetting algorithm');
       algorithm.reset();
-      
-      // Explicitly initialize the population with the new size
-      // This is the key step that ensures population size is correct
       algorithm.initializePopulation();
-      
-      // Double-check population size is correct
-      const populationSize = algorithm.getPopulation().length;
-      console.log(`Confirmed new population size: ${populationSize}, expected: ${params.populationSize}`);
-      
-      // If there's still a mismatch, try to force it (safety check)
-      if (populationSize !== params.populationSize) {
-        console.warn(`Population size mismatch detected. Forcing reinitialize...`);
-        algorithm.reset();
-        algorithm.initializePopulation();
-      }
-      
-      // Now update the stats with the new population
-      const updatedStats = algorithm.getStats();
-      
-      // Update state in a single synchronous batch
-      setStats(updatedStats);
+      setStats(algorithm.getStats());
       setStep(0);
-      
-      // Log final size for debugging
-      console.log(`Final population size after reset: ${algorithm.getPopulation().length}`);
     }
-  }, [params]);
+    
+    // Update reference to current params
+    prevParamsRef.current = params;
+  }, [params, algorithm]);
 
-  // Animation loop for running the algorithm
+  // Animation loop for running the simulation
   useEffect(() => {
     if (!algorithm || !isRunning) return;
 
     const updateSimulation = (timestamp: number) => {
-      // Control update frequency based on speed
-      const updateInterval = 1000 / speed; // milliseconds between updates
-
-      if (timestamp - lastUpdateTimeRef.current >= updateInterval) {
-        // Check if the algorithm has reached max generations or has converged
-        if (algorithm.hasConverged()) {
-          // Stop the animation if the algorithm has converged
-          if (animationFrameRef.current !== null) {
-            cancelAnimationFrame(animationFrameRef.current);
-            animationFrameRef.current = null;
-          }
-          return;
-        }
-
-        // Perform one step of the algorithm
-        algorithm.step();
-        setStats(algorithm.getStats());
-        setStep((prevStep) => prevStep + 1);
+      // Calculate time since last update
+      const elapsed = timestamp - lastUpdateTimeRef.current;
+      
+      // Update at most every (1000 / speed) milliseconds
+      if (elapsed > 1000 / speed) {
         lastUpdateTimeRef.current = timestamp;
+        
+        // Check if the algorithm has converged
+        if (!algorithm.hasConverged()) {
+          algorithm.step();
+          setStats(algorithm.getStats());
+          setStep((prevStep) => prevStep + 1);
+        }
       }
-
+      
       // Continue the animation loop
       animationFrameRef.current = requestAnimationFrame(updateSimulation);
     };
@@ -171,6 +154,8 @@ export function useEvolutionarySimulation(
   const resetAlgorithm = () => {
     if (algorithm) {
       algorithm.reset();
+      algorithm.setParams(params); // Ensure latest params are applied
+      algorithm.initializePopulation();
       setStats(algorithm.getStats());
       setStep(0);
     }

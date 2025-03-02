@@ -1,335 +1,378 @@
-import { FC, useEffect, useState, ChangeEvent } from 'react';
-import { AlgorithmParams, GeneticAlgorithmParams, EvolutionStrategyParams } from '../../types';
-import { 
-  Box, 
-  Grid, 
-  TextField, 
-  Slider, 
-  Typography, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Box,
+  Slider,
+  Typography,
+  TextField,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
+  Tooltip,
   FormHelperText,
-  Divider,
-  SelectChangeEvent
+  SelectChangeEvent,
 } from '@mui/material';
+import { 
+  AlgorithmParams
+} from '../../types';
+import algorithmsConfig from '../../config/evolutionaryAlgorithms.json';
 
-interface ParameterControlsProps {
-  params: AlgorithmParams;
-  onParamChange: (params: AlgorithmParams) => void;
-  disabled: boolean;
-  selectedAlgorithm: string | null;
+// Define interfaces for parameter metadata
+type ParameterInputType = 'slider' | 'number' | 'select';
+
+interface SelectOption {
+  value: string;
+  label: string;
 }
 
-const ParameterControls: FC<ParameterControlsProps> = ({ 
-  params, 
-  onParamChange, 
-  disabled, 
-  selectedAlgorithm 
+interface ParameterMetadata {
+  label: string;
+  type: ParameterInputType;
+  min?: number;
+  max?: number;
+  step?: number;
+  helperText?: string;
+  decimals?: number;
+  options?: SelectOption[];
+  condition?: string;
+}
+
+interface AlgorithmMetadata {
+  id: string;
+  name: string;
+  defaultParameters: Record<string, any>;
+  parameterMetadata: Record<string, ParameterMetadata>;
+  constraints?: {
+    fixedPopulationSize?: number;
+    populationSizeHelperText?: string;
+  };
+}
+
+interface ParameterControlsProps {
+  selectedAlgorithm: string | null;
+  onParamChange: (params: AlgorithmParams) => void;
+  params?: AlgorithmParams;
+  disabled?: boolean;
+}
+
+const ParameterControls: React.FC<ParameterControlsProps> = ({
+  selectedAlgorithm,
+  onParamChange = () => {}, // Provide a default empty function
+  params: initialParams,
+  disabled = false,
 }) => {
-  const [localParams, setLocalParams] = useState<AlgorithmParams>(params);
+  // Local state for parameters
+  const [localParams, setLocalParams] = useState<AlgorithmParams>(initialParams || {
+    populationSize: 50,
+    maxGenerations: 100,
+  });
 
-  // Update local params when selected algorithm changes
+  // Reference to track if we've applied fixed parameters for the current algorithm
+  const hasFixedParamRef = useRef<{ algorithmId: string; fixed: boolean }>({
+    algorithmId: '',
+    fixed: false,
+  });
+
+  // Reference to track previous parameters to prevent infinite update loops
+  const prevParamsRef = useRef<AlgorithmParams | null>(null);
+
+  // Get algorithm metadata from configuration
+  const getAlgorithmMetadata = (algorithmId: string): AlgorithmMetadata | undefined => {
+    return algorithmsConfig.find((algo: any) => algo.id === algorithmId) as unknown as AlgorithmMetadata;
+  };
+
+  // Effect to update parameters when algorithm changes
   useEffect(() => {
-    if (selectedAlgorithm === 'genetic-algorithm') {
-      setLocalParams({
-        ...params,
-        crossoverRate: (params as GeneticAlgorithmParams).crossoverRate || 0.8,
-        mutationRate: (params as GeneticAlgorithmParams).mutationRate || 0.1,
-        selectionMethod: (params as GeneticAlgorithmParams).selectionMethod || 'tournament',
-        tournamentSize: (params as GeneticAlgorithmParams).tournamentSize || 3,
-      });
-    } else if (selectedAlgorithm === 'evolution-strategy') {
-      setLocalParams({
-        ...params,
-        mu: (params as EvolutionStrategyParams).mu || 10,
-        lambda: (params as EvolutionStrategyParams).lambda || 20,
-        selectionType: (params as EvolutionStrategyParams).selectionType || 'plus',
-        initialStepSize: (params as EvolutionStrategyParams).initialStepSize || 1.0,
-      });
-    } else {
-      // Default parameters for other algorithms
-      setLocalParams({
-        populationSize: params.populationSize || 50,
-        maxGenerations: params.maxGenerations || 100,
-      });
-    }
-  }, [selectedAlgorithm, params]);
-
-  // Handle text field changes
-  const handleTextFieldChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type } = e.target;
+    const algorithmMetadata = getAlgorithmMetadata(selectedAlgorithm || '');
     
-    // Handle special cases for empty values
-    if (value === '') {
-      console.log(`Empty value for ${name}, using default`);
-      // Set a temporary local value but don't propagate yet
-      setLocalParams(prev => ({
-        ...prev,
-        [name]: name === 'populationSize' ? 50 : prev[name]
-      }));
-      return;
-    }
-    
-    // Parse numeric values
-    let numericValue: string | number = type === 'number' ? parseFloat(value) : value;
-    
-    // Validate specific fields
-    if (name === 'populationSize') {
-      // If value is empty or NaN, default to 50
-      if (isNaN(numericValue as number)) {
-        numericValue = 50;
-      }
-      // Ensure minimum value of 1
-      else if ((numericValue as number) < 1) {
-        numericValue = 1;
-      }
+    if (algorithmMetadata) {
+      console.log('Algorithm changed to:', selectedAlgorithm, 'with metadata:', algorithmMetadata);
       
-      console.log(`Population size changed to: ${numericValue}`);
+      // Reset fixed parameter tracking when algorithm changes
+      if (hasFixedParamRef.current.algorithmId !== selectedAlgorithm) {
+        hasFixedParamRef.current = {
+          algorithmId: selectedAlgorithm || '',
+          fixed: false,
+        };
+      }
+
+      // Create new params based on defaults from the config
+      const newParams: AlgorithmParams = {
+        populationSize: algorithmMetadata.defaultParameters.populationSize || 50,
+        maxGenerations: algorithmMetadata.defaultParameters.maxGenerations || 100,
+        ...algorithmMetadata.defaultParameters
+      };
+
+      // Apply fixed population size constraint if specified
+      const fixedPopulationSize = algorithmMetadata.constraints?.fixedPopulationSize;
+      if (fixedPopulationSize !== undefined && fixedPopulationSize !== null && !hasFixedParamRef.current.fixed) {
+        newParams.populationSize = fixedPopulationSize;
+        hasFixedParamRef.current.fixed = true;
+      }
+
+      // Check if parameters have actually changed to prevent infinite loops
+      const prevParams = prevParamsRef.current;
+      const hasChanged = !prevParams || 
+        JSON.stringify(prevParams) !== JSON.stringify(newParams);
+
+      if (hasChanged) {
+        console.log('Updating parameters to:', newParams);
+        // Update local state
+        setLocalParams(newParams);
+        prevParamsRef.current = newParams;
+        
+        // Notify parent only if params have changed
+        if (typeof onParamChange === 'function') {
+          console.log('Calling onParamChange with:', newParams);
+          onParamChange(newParams);
+        }
+      }
     }
+  }, [selectedAlgorithm]); // Removed onParamChange from dependencies
+
+  // Handle slider changes
+  const handleSliderChange = (param: string) => (_: Event, value: number | number[]) => {
+    const newValue = Array.isArray(value) ? value[0] : value;
     
-    // Update local state
-    const updatedParams = {
-      ...localParams,
-      [name]: numericValue
+    // Ensure we have a proper copy of all parameters first
+    const newParams = { 
+      ...localParams, 
+      [param]: newValue,
+      // Explicitly include the core parameters to ensure they're never dropped
+      populationSize: param === 'populationSize' ? newValue : localParams.populationSize,
+      maxGenerations: param === 'maxGenerations' ? newValue : localParams.maxGenerations,
     };
     
-    // Set local state
-    setLocalParams(updatedParams);
+    console.log(`Parameter ${param} changed to ${newValue}. New params:`, newParams);
     
-    // Use a very short delay to ensure the UI reflects the change before propagating
-    // This helps prevent race conditions
-    setTimeout(() => {
-      // Immediately notify parent component of parameter changes
-      onParamChange(updatedParams);
-      console.log(`Parameter ${name} change propagated with value ${numericValue}`);
-    }, 0);
+    // Update our tracking ref to prevent loops in useEffect
+    prevParamsRef.current = newParams;
+    
+    setLocalParams(newParams);
+    
+    if (typeof onParamChange === 'function') {
+      onParamChange(newParams);
+    }
+  };
+
+  // Handle number input changes
+  const handleNumberInputChange = (param: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value === '' ? '' : Number(e.target.value);
+    if (value === '' || (!isNaN(value) && value >= 0)) {
+      // Ensure we have a proper copy of all parameters first
+      const newParams = { 
+        ...localParams, 
+        [param]: value === '' ? 0 : value,
+        // Explicitly include the core parameters to ensure they're never dropped
+        populationSize: param === 'populationSize' ? (value === '' ? 0 : value) : localParams.populationSize,
+        maxGenerations: param === 'maxGenerations' ? (value === '' ? 0 : value) : localParams.maxGenerations,
+      };
+      
+      console.log(`Parameter ${param} changed to ${value}. New params:`, newParams);
+      
+      // Update our tracking ref to prevent loops in useEffect
+      prevParamsRef.current = newParams;
+      
+      setLocalParams(newParams);
+      
+      if (typeof onParamChange === 'function') {
+        onParamChange(newParams);
+      }
+    }
   };
 
   // Handle select changes
-  const handleSelectChange = (e: SelectChangeEvent) => {
-    const { name, value } = e.target;
+  const handleSelectChange = (param: string) => (e: SelectChangeEvent<string>) => {
+    const value = e.target.value;
     
-    setLocalParams(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    // Ensure we have a proper copy of all parameters first
+    const newParams = { 
+      ...localParams, 
+      [param]: value,
+      // Explicitly include the core parameters to ensure they're never dropped
+      populationSize: localParams.populationSize,
+      maxGenerations: localParams.maxGenerations, 
+    };
     
-    onParamChange({
-      ...localParams,
-      [name]: value
-    });
+    console.log(`Parameter ${param} changed to ${value}. New params:`, newParams);
+    
+    // Update our tracking ref to prevent loops in useEffect
+    prevParamsRef.current = newParams;
+    
+    setLocalParams(newParams);
+    
+    if (typeof onParamChange === 'function') {
+      onParamChange(newParams);
+    }
   };
 
-  // Handle slider changes
-  const handleSliderChange = (name: string) => (_: Event, value: number | number[]) => {
-    setLocalParams(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    onParamChange({
-      ...localParams,
-      [name]: value
-    });
-  };
-
-  // Render algorithm-specific parameters
-  const renderAlgorithmSpecificParams = () => {
-    if (selectedAlgorithm === 'genetic-algorithm') {
-      return (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle2" gutterBottom>Genetic Algorithm Parameters</Typography>
-          <Divider sx={{ mb: 2 }} />
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="caption" gutterBottom>
-                Crossover Rate: {(localParams as GeneticAlgorithmParams).crossoverRate?.toFixed(2)}
-              </Typography>
-              <Slider
-                name="crossoverRate"
-                value={(localParams as GeneticAlgorithmParams).crossoverRate || 0.8}
-                onChange={handleSliderChange('crossoverRate')}
-                min={0}
-                max={1}
-                step={0.01}
-                disabled={disabled}
-                valueLabelDisplay="auto"
-                sx={{ mt: 1 }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <Typography variant="caption" gutterBottom>
-                Mutation Rate: {(localParams as GeneticAlgorithmParams).mutationRate?.toFixed(2)}
-              </Typography>
-              <Slider
-                name="mutationRate"
-                value={(localParams as GeneticAlgorithmParams).mutationRate || 0.1}
-                onChange={handleSliderChange('mutationRate')}
-                min={0}
-                max={1}
-                step={0.01}
-                disabled={disabled}
-                valueLabelDisplay="auto"
-                sx={{ mt: 1 }}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small" disabled={disabled}>
-                <InputLabel id="selection-method-label">Selection Method</InputLabel>
-                <Select
-                  labelId="selection-method-label"
-                  id="selection-method"
-                  name="selectionMethod"
-                  value={(localParams as GeneticAlgorithmParams).selectionMethod || 'tournament'}
-                  onChange={handleSelectChange}
-                  label="Selection Method"
-                >
-                  <MenuItem value="tournament">Tournament</MenuItem>
-                  <MenuItem value="roulette">Roulette Wheel</MenuItem>
-                  <MenuItem value="rank">Rank</MenuItem>
-                </Select>
-                <FormHelperText>How individuals are selected for reproduction</FormHelperText>
-              </FormControl>
-            </Grid>
-            
-            {(localParams as GeneticAlgorithmParams).selectionMethod === 'tournament' && (
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Tournament Size"
-                  name="tournamentSize"
-                  type="number"
-                  value={(localParams as GeneticAlgorithmParams).tournamentSize || 3}
-                  onChange={handleTextFieldChange}
-                  disabled={disabled}
-                  InputProps={{ inputProps: { min: 2, max: 10 } }}
-                  helperText="Number of individuals in each tournament"
-                />
-              </Grid>
-            )}
-          </Grid>
-        </Box>
-      );
-    } else if (selectedAlgorithm === 'evolution-strategy') {
-      return (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle2" gutterBottom>Evolution Strategy Parameters</Typography>
-          <Divider sx={{ mb: 2 }} />
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                size="small"
-                label="μ (Parent Population)"
-                name="mu"
-                type="number"
-                value={(localParams as EvolutionStrategyParams).mu || 10}
-                onChange={handleTextFieldChange}
-                disabled={disabled}
-                InputProps={{ inputProps: { min: 1, max: 100 } }}
-                helperText="Number of parents in each generation"
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                size="small"
-                label="λ (Offspring Population)"
-                name="lambda"
-                type="number"
-                value={(localParams as EvolutionStrategyParams).lambda || 20}
-                onChange={handleTextFieldChange}
-                disabled={disabled}
-                InputProps={{ inputProps: { min: 1, max: 200 } }}
-                helperText="Number of offspring in each generation"
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small" disabled={disabled}>
-                <InputLabel id="selection-type-label">Selection Type</InputLabel>
-                <Select
-                  labelId="selection-type-label"
-                  id="selection-type"
-                  name="selectionType"
-                  value={(localParams as EvolutionStrategyParams).selectionType || 'plus'}
-                  onChange={handleSelectChange}
-                  label="Selection Type"
-                >
-                  <MenuItem value="plus">(μ+λ) Selection</MenuItem>
-                  <MenuItem value="comma">(μ,λ) Selection</MenuItem>
-                </Select>
-                <FormHelperText>How the next generation is selected</FormHelperText>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <Typography variant="caption" gutterBottom>
-                Initial Step Size: {(localParams as EvolutionStrategyParams).initialStepSize?.toFixed(2)}
-              </Typography>
-              <Slider
-                name="initialStepSize"
-                value={(localParams as EvolutionStrategyParams).initialStepSize || 1.0}
-                onChange={handleSliderChange('initialStepSize')}
-                min={0.1}
-                max={5}
-                step={0.1}
-                disabled={disabled}
-                valueLabelDisplay="auto"
-                sx={{ mt: 1 }}
-              />
-            </Grid>
-          </Grid>
-        </Box>
-      );
+  // Evaluate a condition for parameter visibility
+  const evaluateCondition = (condition: string): boolean => {
+    // For the specific case we know about - handle it directly
+    if (condition === "selectionMethod === 'tournament'") {
+      return localParams.selectionMethod === 'tournament';
     }
     
-    return null;
+    // If there are other conditions in the future, you can add more cases here
+    // Example:
+    // if (condition === "someCondition") {
+    //   return someLogic;
+    // }
+    
+    // Log conditions we don't recognize
+    console.warn('Unhandled condition:', condition, 'with params:', localParams);
+    return true; // Default to showing the parameter if we can't evaluate
   };
 
+  // Render parameter controls
+  const renderParameterControl = (paramName: string, metadata: ParameterMetadata) => {
+    // Check conditional rendering
+    if (metadata.condition) {
+      // Use the safer evaluation method
+      if (!evaluateCondition(metadata.condition)) {
+        return null;
+      }
+    }
+
+    const value = localParams[paramName] ?? 0;
+
+    switch (metadata.type) {
+      case 'slider':
+        return (
+          <Box key={paramName} sx={{ width: '100%', mt: 2 }}>
+            <Typography gutterBottom>{metadata.label}</Typography>
+            <Slider
+              value={value}
+              onChange={handleSliderChange(paramName)}
+              aria-labelledby={`${paramName}-slider`}
+              valueLabelDisplay="auto"
+              step={metadata.step || 1}
+              marks
+              min={metadata.min || 0}
+              max={metadata.max || 100}
+              valueLabelFormat={(v) => metadata.decimals ? v.toFixed(metadata.decimals) : v}
+              disabled={disabled}
+            />
+            {metadata.helperText && (
+              <FormHelperText>{metadata.helperText}</FormHelperText>
+            )}
+          </Box>
+        );
+      case 'number':
+        return (
+          <Box key={paramName} sx={{ width: '100%', mt: 2 }}>
+            <TextField
+              label={metadata.label}
+              type="number"
+              value={value}
+              onChange={handleNumberInputChange(paramName)}
+              inputProps={{
+                min: metadata.min || 0,
+                max: metadata.max || 100,
+                step: metadata.step || 1,
+              }}
+              fullWidth
+              variant="outlined"
+              margin="normal"
+              helperText={metadata.helperText}
+              disabled={disabled}
+            />
+          </Box>
+        );
+      case 'select':
+        return (
+          <Box key={paramName} sx={{ width: '100%', mt: 2 }}>
+            <FormControl fullWidth disabled={disabled}>
+              <InputLabel id={`${paramName}-select-label`}>{metadata.label}</InputLabel>
+              <Select
+                labelId={`${paramName}-select-label`}
+                id={`${paramName}-select`}
+                value={String(value)}
+                label={metadata.label}
+                onChange={handleSelectChange(paramName)}
+              >
+                {metadata.options?.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              {metadata.helperText && (
+                <FormHelperText>{metadata.helperText}</FormHelperText>
+              )}
+            </FormControl>
+          </Box>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Get current algorithm metadata
+  const algorithmMetadata = getAlgorithmMetadata(selectedAlgorithm || '');
+  
+  if (!algorithmMetadata) {
+    return <Typography>No configuration found for the selected algorithm.</Typography>;
+  }
+
+  // Check if population size is fixed for this algorithm
+  const hasFixedPopulationSize = algorithmMetadata.constraints?.fixedPopulationSize !== undefined && 
+                               algorithmMetadata.constraints?.fixedPopulationSize !== null;
+
   return (
-    <Box>
-      <Typography variant="subtitle2" gutterBottom>Common Parameters</Typography>
-      <Divider sx={{ mb: 2 }} />
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            size="small"
-            label="Population Size"
-            name="populationSize"
-            type="number"
-            value={localParams.populationSize || 50}
-            onChange={handleTextFieldChange}
-            disabled={disabled}
-            InputProps={{ inputProps: { min: 1, max: 500 } }}
-            helperText="Number of individuals in the population"
-          />
-        </Grid>
-        
-        <Grid item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            size="small"
-            label="Max Generations"
-            name="maxGenerations"
-            type="number"
-            value={localParams.maxGenerations || 100}
-            onChange={handleTextFieldChange}
-            disabled={disabled}
-            InputProps={{ inputProps: { min: 10, max: 1000 } }}
-            helperText="Maximum number of generations to run"
-          />
-        </Grid>
-      </Grid>
+    <Box sx={{ p: 2 }}>
+      <Typography variant="h6" gutterBottom>
+        Algorithm Parameters
+      </Typography>
       
-      {renderAlgorithmSpecificParams()}
+      {/* Common Parameters */}
+      <Box sx={{ width: '100%', mt: 2 }}>
+        <Tooltip title={hasFixedPopulationSize ? (algorithmMetadata.constraints?.populationSizeHelperText || '') : ''}>
+          <TextField
+            label="Population Size"
+            type="number"
+            value={localParams.populationSize}
+            onChange={handleNumberInputChange('populationSize')}
+            inputProps={{
+              min: 1,
+              max: 200,
+              readOnly: hasFixedPopulationSize,
+            }}
+            fullWidth
+            variant="outlined"
+            margin="normal"
+            disabled={hasFixedPopulationSize || disabled}
+            sx={{
+              '& .Mui-disabled': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                cursor: 'not-allowed',
+              },
+            }}
+          />
+        </Tooltip>
+      </Box>
+      
+      <Box sx={{ width: '100%', mt: 2 }}>
+        <TextField
+          label="Max Generations"
+          type="number"
+          value={localParams.maxGenerations}
+          onChange={handleNumberInputChange('maxGenerations')}
+          inputProps={{
+            min: 1,
+            max: 1000,
+          }}
+          fullWidth
+          variant="outlined"
+          margin="normal"
+          disabled={disabled}
+        />
+      </Box>
+      
+      {/* Algorithm-specific Parameters */}
+      {Object.entries(algorithmMetadata.parameterMetadata || {}).map(([paramName, metadata]) =>
+        renderParameterControl(paramName, metadata)
+      )}
     </Box>
   );
 };

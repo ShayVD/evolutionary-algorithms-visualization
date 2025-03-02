@@ -131,9 +131,6 @@ const Header: FC<HeaderProps> = ({
           {/* Expandable Panels */}
           <Collapse in={activePanel === 'parameters'}>
             <Paper sx={{ p: 2, mb: 1, bgcolor: 'grey.50' }}>
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>
-                Algorithm Parameters
-              </Typography>
               <ParameterControls 
                 params={algorithmParams}
                 onParamChange={onParamChange}

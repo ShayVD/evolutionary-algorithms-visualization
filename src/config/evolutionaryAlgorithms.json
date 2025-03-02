@@ -18,6 +18,55 @@
       "tournamentSize": 3,
       "elitism": 1
     },
+    "parameterMetadata": {
+      "crossoverRate": {
+        "label": "Crossover Rate",
+        "type": "slider",
+        "min": 0,
+        "max": 1,
+        "step": 0.01,
+        "helperText": "Probability of crossover between individuals",
+        "decimals": 2
+      },
+      "mutationRate": {
+        "label": "Mutation Rate",
+        "type": "slider",
+        "min": 0,
+        "max": 1,
+        "step": 0.01,
+        "helperText": "Probability of mutation for each gene",
+        "decimals": 2
+      },
+      "selectionMethod": {
+        "label": "Selection Method",
+        "type": "select",
+        "options": [
+          { "value": "tournament", "label": "Tournament" },
+          { "value": "roulette", "label": "Roulette Wheel" },
+          { "value": "rank", "label": "Rank" }
+        ],
+        "helperText": "How individuals are selected for reproduction"
+      },
+      "tournamentSize": {
+        "label": "Tournament Size",
+        "type": "number",
+        "min": 2,
+        "max": 10,
+        "helperText": "Number of individuals in each tournament",
+        "condition": "selectionMethod === 'tournament'"
+      },
+      "elitism": {
+        "label": "Elitism",
+        "type": "number",
+        "min": 0,
+        "max": 10,
+        "helperText": "Number of best individuals to preserve in each generation"
+      }
+    },
+    "constraints": {
+      "fixedPopulationSize": null,
+      "populationSizeHelperText": null
+    },
     "icon": "🧬",
     "filePath": "./implementations/GeneticAlgorithm"
   },
@@ -34,10 +83,48 @@
     "defaultParameters": {
       "populationSize": 30,
       "maxGenerations": 100,
-      "offspringSize": 60,
-      "selectionStrategy": "comma",
-      "initialStepSize": 1.0,
-      "adaptationFactor": 0.7
+      "mu": 10,
+      "lambda": 20,
+      "selectionType": "plus",
+      "initialStepSize": 1.0
+    },
+    "parameterMetadata": {
+      "mu": {
+        "label": "μ (Parent Population)",
+        "type": "number",
+        "min": 1,
+        "max": 100,
+        "helperText": "Number of parents in each generation"
+      },
+      "lambda": {
+        "label": "λ (Offspring Population)",
+        "type": "number",
+        "min": 1,
+        "max": 200,
+        "helperText": "Number of offspring in each generation"
+      },
+      "selectionType": {
+        "label": "Selection Type",
+        "type": "select",
+        "options": [
+          { "value": "plus", "label": "(μ+λ) Selection" },
+          { "value": "comma", "label": "(μ,λ) Selection" }
+        ],
+        "helperText": "How the next generation is selected"
+      },
+      "initialStepSize": {
+        "label": "Initial Step Size",
+        "type": "slider",
+        "min": 0.1,
+        "max": 5,
+        "step": 0.1,
+        "helperText": "Initial mutation step size",
+        "decimals": 2
+      }
+    },
+    "constraints": {
+      "fixedPopulationSize": null,
+      "populationSizeHelperText": null
     },
     "icon": "🔄",
     "filePath": "./implementations/EvolutionStrategy"
@@ -58,6 +145,41 @@
       "scalingFactor": 0.5,
       "crossoverRate": 0.7,
       "strategy": "rand/1/bin"
+    },
+    "parameterMetadata": {
+      "scalingFactor": {
+        "label": "Scaling Factor (F)",
+        "type": "slider",
+        "min": 0.1,
+        "max": 1.0,
+        "step": 0.05,
+        "helperText": "Controls the amplification of differential variation",
+        "decimals": 2
+      },
+      "crossoverRate": {
+        "label": "Crossover Rate (CR)",
+        "type": "slider",
+        "min": 0,
+        "max": 1,
+        "step": 0.01,
+        "helperText": "Probability of crossover for each dimension",
+        "decimals": 2
+      },
+      "strategy": {
+        "label": "DE Strategy",
+        "type": "select",
+        "options": [
+          { "value": "rand/1/bin", "label": "rand/1/bin" },
+          { "value": "best/1/bin", "label": "best/1/bin" },
+          { "value": "rand/2/bin", "label": "rand/2/bin" },
+          { "value": "best/2/bin", "label": "best/2/bin" }
+        ],
+        "helperText": "Strategy for mutation and crossover"
+      }
+    },
+    "constraints": {
+      "fixedPopulationSize": null,
+      "populationSizeHelperText": null
     },
     "icon": "⚡",
     "filePath": "./implementations/DifferentialEvolution"
@@ -80,6 +202,47 @@
       "socialCoefficient": 1.49,
       "maxVelocity": 4.0
     },
+    "parameterMetadata": {
+      "inertiaWeight": {
+        "label": "Inertia Weight",
+        "type": "slider",
+        "min": 0.1,
+        "max": 1.0,
+        "step": 0.01,
+        "helperText": "Controls influence of previous velocity",
+        "decimals": 2
+      },
+      "cognitiveCoefficient": {
+        "label": "Cognitive Coefficient",
+        "type": "slider",
+        "min": 0.1,
+        "max": 2.5,
+        "step": 0.01,
+        "helperText": "Controls attraction to particle's personal best",
+        "decimals": 2
+      },
+      "socialCoefficient": {
+        "label": "Social Coefficient",
+        "type": "slider",
+        "min": 0.1,
+        "max": 2.5,
+        "step": 0.01,
+        "helperText": "Controls attraction to global best",
+        "decimals": 2
+      },
+      "maxVelocity": {
+        "label": "Maximum Velocity",
+        "type": "number",
+        "min": 0.1,
+        "max": 10,
+        "step": 0.1,
+        "helperText": "Maximum velocity limit for particles"
+      }
+    },
+    "constraints": {
+      "fixedPopulationSize": null,
+      "populationSizeHelperText": null
+    },
     "icon": "🐦",
     "filePath": "./implementations/ParticleSwarmOptimization"
   },
@@ -98,6 +261,28 @@
       "maxGenerations": 100,
       "limit": 20,
       "scalingFactor": 0.5
+    },
+    "parameterMetadata": {
+      "limit": {
+        "label": "Abandonment Limit",
+        "type": "number",
+        "min": 1,
+        "max": 100,
+        "helperText": "Max trials before abandoning a food source"
+      },
+      "scalingFactor": {
+        "label": "Scaling Factor",
+        "type": "slider",
+        "min": 0.1,
+        "max": 1.0,
+        "step": 0.05,
+        "helperText": "Controls neighborhood search size",
+        "decimals": 2
+      }
+    },
+    "constraints": {
+      "fixedPopulationSize": null,
+      "populationSizeHelperText": null
     },
     "icon": "🐝",
     "filePath": "./implementations/ArtificialBeeColony"
@@ -119,6 +304,45 @@
       "coolingRate": 0.95,
       "neighborhoodSize": 0.1,
       "minTemperature": 0.01
+    },
+    "parameterMetadata": {
+      "initialTemperature": {
+        "label": "Initial Temperature",
+        "type": "number",
+        "min": 1,
+        "max": 1000,
+        "helperText": "Starting temperature (higher allows more exploration)"
+      },
+      "coolingRate": {
+        "label": "Cooling Rate",
+        "type": "slider",
+        "min": 0.8,
+        "max": 0.99,
+        "step": 0.01,
+        "helperText": "Rate at which temperature decreases (higher = slower cooling)",
+        "decimals": 2
+      },
+      "neighborhoodSize": {
+        "label": "Neighborhood Size",
+        "type": "slider",
+        "min": 0.01,
+        "max": 0.5,
+        "step": 0.01,
+        "helperText": "Size of neighborhood for generating neighboring solutions",
+        "decimals": 2
+      },
+      "minTemperature": {
+        "label": "Minimum Temperature",
+        "type": "number",
+        "min": 0.001,
+        "max": 10,
+        "step": 0.001,
+        "helperText": "Temperature at which the algorithm stops"
+      }
+    },
+    "constraints": {
+      "fixedPopulationSize": 1,
+      "populationSizeHelperText": "Simulated Annealing always uses a population size of 1"
     },
     "icon": "🔥",
     "filePath": "./implementations/SimulatedAnnealing"

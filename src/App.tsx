@@ -20,6 +20,7 @@ import {
   ThemeProvider,
   createTheme
 } from '@mui/material'
+import { createProblem } from './utils/visualization'
 
 // Create a theme instance
 const theme = createTheme({
@@ -55,7 +56,10 @@ function App() {
     speed: 1,
     currentStep: 0,
     stats: null,
-  })
+  });
+
+  // Problem instance state
+  const [problemInstance, setProblemInstance] = useState<any>(null);
 
   // Error handler
   const handleError = (error: Error) => {
@@ -63,13 +67,32 @@ function App() {
     setErrors(prev => [...prev, error.message]);
   }
 
+  // Initialize or update problem instance when selected problem changes
+  useEffect(() => {
+    if (appState.selectedProblem) {
+      (async () => {
+        try {
+          // Type assertion to assure TypeScript that selectedProblem is not null here
+          const problemId = appState.selectedProblem as string;
+          const newProblem = await createProblem(problemId);
+          setProblemInstance(newProblem);
+        } catch (error) {
+          handleError(error as Error);
+        }
+      })();
+    } else {
+      setProblemInstance(null);
+    }
+  }, [appState.selectedProblem]);
+
   // Use the evolutionary simulation hook with error handling
   let simulationHook;
   try {
+    // Always call the hook, but handle null values inside
     simulationHook = useEvolutionarySimulation(
-      appState.selectedProblem,
-      appState.selectedAlgorithm,
+      appState.selectedAlgorithm || '', // Pass empty string instead of null
       appState.algorithmParams,
+      problemInstance,
       appState.isRunning,
       appState.speed
     );
@@ -80,7 +103,8 @@ function App() {
       step: 0,
       performStep: () => console.error('Cannot perform step due to an error'),
       resetAlgorithm: () => console.error('Cannot reset algorithm due to an error'),
-      algorithm: null
+      algorithm: null,
+      problem: null
     };
   }
 
@@ -139,6 +163,7 @@ function App() {
 
   // Handler for parameter changes
   const handleParameterChange = (params: AlgorithmParams) => {
+    console.log('App received parameter change:', params);
     try {
       setAppState((prevState) => ({
         ...prevState,
