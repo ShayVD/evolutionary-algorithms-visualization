@@ -216,6 +216,24 @@ npm install
 npm run dev
 ```
 
+## Contributing
+
+Contributions to this project are highly welcome! Whether you want to add new optimization problems, implement additional evolutionary algorithms, improve visualizations, or fix bugs - your help is appreciated.
+
+### How to Contribute
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+See the "Extending the Project" section above for details on how to add new optimization functions or evolutionary algorithms.
+
+### Live Demo
+
+Visit the live version of this project at [www.evolutionaryalgorithms.eu](https://www.evolutionaryalgorithms.eu) to see it in action!
+
 ## License
 
 MIT 
