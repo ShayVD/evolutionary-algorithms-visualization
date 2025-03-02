@@ -43,10 +43,15 @@ async function initializeFunctions(): Promise<void> {
     try {
       // Import all function implementations based on the configuration
       await Promise.all(
-        functionsConfig.map(func => 
-          import(func.filePath)
-            .catch(error => console.error(`Error loading function ${func.id}:`, error))
-        )
+        functionsConfig.map(async func => {
+          try {
+            // Use dynamic import with relative path
+            await import(`./implementations/${func.filePath}.ts`);
+          } catch (error) {
+            console.error(`Error loading function ${func.id}:`, error);
+            console.error(`Failed path: ${func.filePath}`);
+          }
+        })
       );
       
       functionsInitialized = true;

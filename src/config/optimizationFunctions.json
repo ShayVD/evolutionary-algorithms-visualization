@@ -18,7 +18,7 @@
       "colorScheme": "viridis"
     },
     "icon": "🔵",
-    "filePath": "./implementations/SphereFunction"
+    "filePath": "SphereFunction"
   },
   {
     "id": "rastrigin",
@@ -39,7 +39,7 @@
       "colorScheme": "plasma"
     },
     "icon": "🌋",
-    "filePath": "./implementations/RastriginFunction"
+    "filePath": "RastriginFunction"
   },
   {
     "id": "rosenbrock",
@@ -60,7 +60,7 @@
       "colorScheme": "magma"
     },
     "icon": "🏔️",
-    "filePath": "./implementations/RosenbrockFunction"
+    "filePath": "RosenbrockFunction"
   },
   {
     "id": "ackley",
@@ -81,7 +81,7 @@
       "colorScheme": "cividis"
     },
     "icon": "🌀",
-    "filePath": "./implementations/AckleyFunction"
+    "filePath": "AckleyFunction"
   },
   {
     "id": "schwefel222",
@@ -102,6 +102,6 @@
       "colorScheme": "inferno"
     },
     "icon": "🔍",
-    "filePath": "./implementations/Schwefel222Function"
+    "filePath": "Schwefel222Function"
   }
 ] 

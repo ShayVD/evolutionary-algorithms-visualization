@@ -95,10 +95,15 @@ async function initializeAlgorithms() {
   try {
     // Import all algorithm implementations based on the configuration
     await Promise.all(
-      algorithmsConfig.map(algorithm => 
-        import(algorithm.filePath)
-          .catch(error => console.error(`Error loading algorithm ${algorithm.id}:`, error))
-      )
+      algorithmsConfig.map(async algorithm => {
+        try {
+          // Use dynamic import with relative path
+          await import(`./implementations/${algorithm.filePath}.ts`);
+        } catch (error) {
+          console.error(`Error loading algorithm ${algorithm.id}:`, error);
+          console.error(`Failed path: ${algorithm.filePath}`);
+        }
+      })
     );
     
     algorithmsInitialized = true;

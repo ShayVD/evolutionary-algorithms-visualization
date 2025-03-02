@@ -68,7 +68,7 @@
       "populationSizeHelperText": null
     },
     "icon": "🧬",
-    "filePath": "./implementations/GeneticAlgorithm"
+    "filePath": "GeneticAlgorithm"
   },
   {
     "id": "es",
@@ -127,7 +127,7 @@
       "populationSizeHelperText": null
     },
     "icon": "🔄",
-    "filePath": "./implementations/EvolutionStrategy"
+    "filePath": "EvolutionStrategy"
   },
   {
     "id": "de",
@@ -182,7 +182,7 @@
       "populationSizeHelperText": null
     },
     "icon": "⚡",
-    "filePath": "./implementations/DifferentialEvolution"
+    "filePath": "DifferentialEvolution"
   },
   {
     "id": "pso",
@@ -244,7 +244,7 @@
       "populationSizeHelperText": null
     },
     "icon": "🐦",
-    "filePath": "./implementations/ParticleSwarmOptimization"
+    "filePath": "ParticleSwarmOptimization"
   },
   {
     "id": "abc",
@@ -285,7 +285,7 @@
       "populationSizeHelperText": null
     },
     "icon": "🐝",
-    "filePath": "./implementations/ArtificialBeeColony"
+    "filePath": "ArtificialBeeColony"
   },
   {
     "id": "sa",
@@ -345,6 +345,6 @@
       "populationSizeHelperText": "Simulated Annealing always uses a population size of 1"
     },
     "icon": "🔥",
-    "filePath": "./implementations/SimulatedAnnealing"
+    "filePath": "SimulatedAnnealing"
   }
 ] 
