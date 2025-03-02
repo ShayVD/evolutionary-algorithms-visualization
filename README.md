@@ -232,7 +232,7 @@ See the "Extending the Project" section above for details on how to add new opti
 
 ### Live Demo
 
-Visit the live version of this project at [www.evolutionaryalgorithms.eu](https://www.evolutionaryalgorithms.eu) to see it in action!
+Visit the official live version of this project at [www.evolutionaryalgorithms.eu](https://www.evolutionaryalgorithms.eu) to see it in action!
 
 ## License
 
@@ -271,7 +271,7 @@ To add a new optimization function to the project, follow these steps:
        "colorScheme": "viridis"
      },
      "icon": "🔍",
-     "filePath": "./implementations/YourFunction"
+     "filePath": "YourFunction"
    }
    ```
 
@@ -332,7 +332,7 @@ To add a new evolutionary algorithm to the project, follow these steps:
        "specificParam2": "default"
      },
      "icon": "🧬",
-     "filePath": "./implementations/YourNewAlgorithm"
+     "filePath": "YourNewAlgorithm"
    }
    ```
 

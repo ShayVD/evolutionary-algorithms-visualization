@@ -231,6 +231,33 @@ const Visualization: FC<VisualizationProps> = ({
     }, 50); // Small delay to ensure algorithm state is fully updated
   }, [algorithmParams, algorithm, problem, algorithmInstance]);
 
+  // Add a new effect to handle 3D rendering issues related to timing
+  useEffect(() => {
+    if (viewMode === '3d' && sceneRef.current && cameraRef.current && rendererRef.current) {
+      // Force multiple renders after a delay to ensure container has proper dimensions
+      const renderTimers = [100, 300, 500].map(delay => 
+        setTimeout(() => {
+          console.log(`Forcing 3D render after ${delay}ms delay`);
+          if (containerRef.current) {
+            const { width, height } = containerRef.current.getBoundingClientRect();
+            if (width > 0 && height > 0 && rendererRef.current && cameraRef.current) {
+              rendererRef.current.setSize(width, height);
+              cameraRef.current.aspect = width / height;
+              cameraRef.current.updateProjectionMatrix();
+              if (sceneRef.current) {
+                rendererRef.current.render(sceneRef.current, cameraRef.current);
+              }
+            }
+          }
+        }, delay)
+      );
+      
+      return () => {
+        renderTimers.forEach(timerId => clearTimeout(timerId));
+      };
+    }
+  }, [viewMode, dimensions]);
+
   // Create a 2D function visualization
   const create2DFunctionVisualization = (problemType: string) => {
     console.log('Creating 2D function visualization for:', problemType);
@@ -506,6 +533,15 @@ const Visualization: FC<VisualizationProps> = ({
     console.log('Setting up 3D visualization for:', problemType);
     if (!threeContainerRef.current) return;
 
+    // Ensure container has dimensions
+    if (dimensions.width === 0 || dimensions.height === 0) {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        console.log('Updating dimensions before 3D setup:', width, height);
+        setDimensions({ width, height });
+      }
+    }
+    
     // Clean up previous 3D visualization if it exists
     cleanup3DVisualization();
 
@@ -835,6 +871,7 @@ const Visualization: FC<VisualizationProps> = ({
       const sphere = new THREE.Mesh(geometry, material);
       sphere.position.set(individual.x, individual.y, z + 0.2); // Small offset to be visible above surface
       sphere.name = 'populationPoint';
+      sphere.userData.type = 'population'; // Add type property to identify for removal
       
       scene.add(sphere);
     });
