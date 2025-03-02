@@ -1,5 +1,13 @@
-import { FC, useEffect } from 'react';
-import { FormControl, InputLabel, Select, MenuItem, Typography, SelectChangeEvent } from '@mui/material';
+import { FC, useEffect, useState } from 'react';
+import { FormControl, InputLabel, Select, MenuItem, Typography, SelectChangeEvent, CircularProgress } from '@mui/material';
+import { getAvailableFunctions } from '../../problems/ContinuousFunctions';
+
+interface Problem {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+}
 
 interface ProblemSelectorProps {
   selectedProblem: string | null;
@@ -7,47 +15,30 @@ interface ProblemSelectorProps {
 }
 
 const ProblemSelector: FC<ProblemSelectorProps> = ({ selectedProblem, onProblemChange }) => {
-  // Available problems for selection
-  const problems = [
-    { 
-      id: 'sphere', 
-      name: 'Sphere Function', 
-      description: 'A simple, continuous, convex, and unimodal function',
-      icon: '🔵' // Simple emoji icon for representation
-    },
-    { 
-      id: 'rastrigin', 
-      name: 'Rastrigin Function', 
-      description: 'A highly multimodal function with many local minima',
-      icon: '🌊' // Represents the wave-like surface of Rastrigin
-    },
-    { 
-      id: 'rosenbrock', 
-      name: 'Rosenbrock Function', 
-      description: 'A non-convex function with a narrow valley',
-      icon: '🏔️' // Represents the valley shape of Rosenbrock
-    },
-    { 
-      id: 'ackley', 
-      name: 'Ackley Function', 
-      description: 'A multimodal function with many local minima',
-      icon: '🎯' // Represents the many local minima with a central target
-    },
-    { 
-      id: 'schwefel222', 
-      name: 'Schwefel Problem 2.22', 
-      description: 'A unimodal function that combines sum and product of absolute values',
-      icon: '📊' // Represents mathematical operations
-    },
-    // Add more problems as needed
-  ];
+  const [problems, setProblems] = useState<Problem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // Auto-select first problem if none is selected
+  // Load problems from the registry
   useEffect(() => {
-    if (!selectedProblem && problems.length > 0) {
-      onProblemChange(problems[0].id);
-    }
-  }, [selectedProblem, onProblemChange, problems]);
+    const loadProblems = async () => {
+      try {
+        setLoading(true);
+        const availableProblems = await getAvailableFunctions();
+        setProblems(availableProblems);
+        setLoading(false);
+        
+        // Auto-select first problem if none is selected
+        if (!selectedProblem && availableProblems.length > 0) {
+          onProblemChange(availableProblems[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to load problems:', error);
+        setLoading(false);
+      }
+    };
+    
+    loadProblems();
+  }, [selectedProblem, onProblemChange]);
 
   const handleChange = (event: SelectChangeEvent) => {
     onProblemChange(event.target.value);
@@ -63,17 +54,25 @@ const ProblemSelector: FC<ProblemSelectorProps> = ({ selectedProblem, onProblemC
           value={selectedProblem || ''}
           onChange={handleChange}
           label="Problem"
+          disabled={loading}
         >
-          {problems.map((problem) => (
-            <MenuItem key={problem.id} value={problem.id}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ fontSize: '1.25rem', marginRight: '8px' }}>{problem.icon}</span>
-                <div>
-                  <Typography variant="body1">{problem.name}</Typography>
-                </div>
-              </div>
+          {loading ? (
+            <MenuItem disabled>
+              <CircularProgress size={20} />
+              <span style={{ marginLeft: 10 }}>Loading problems...</span>
             </MenuItem>
-          ))}
+          ) : (
+            problems.map((problem) => (
+              <MenuItem key={problem.id} value={problem.id}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ fontSize: '1.25rem', marginRight: '8px' }}>{problem.icon}</span>
+                  <div>
+                    <Typography variant="body1">{problem.name}</Typography>
+                  </div>
+                </div>
+              </MenuItem>
+            ))
+          )}
         </Select>
       </FormControl>
     </div>

@@ -5,7 +5,7 @@ import functionsConfig from '../config/optimizationFunctions.json';
 /**
  * Type for function evaluator
  */
-type FunctionEvaluator = (solution: number[]) => number;
+export type FunctionEvaluator = (solution: number[]) => number;
 
 /**
  * Registry of function evaluators
@@ -17,6 +17,7 @@ let functionRegistry: Record<string, FunctionEvaluator> = {};
  */
 export function registerFunction(id: string, evaluator: FunctionEvaluator): void {
   functionRegistry[id] = evaluator;
+  console.log(`Registered function evaluator for ${id}`);
 }
 
 /**
@@ -116,12 +117,32 @@ export async function getAvailableFunctions(): Promise<{ id: string; name: strin
 }
 
 /**
+ * Get a function evaluator by ID
+ */
+export function getFunctionEvaluator(id: string): FunctionEvaluator | null {
+  return functionRegistry[id] || null;
+}
+
+/**
  * Get visualization configuration for a specific function
  */
 export async function getFunctionVisualizationConfig(functionId: string) {
   await initializeFunctions();
   const config = functionsConfig.find(f => f.id === functionId);
-  return config ? config.visualization : null;
+  
+  if (!config) {
+    console.warn(`No configuration found for function with ID '${functionId}'`);
+    return null;
+  }
+  
+  // Return the visualization configuration with 2D formula
+  return {
+    xRange: config.visualization?.xRange || [-5, 5],
+    yRange: config.visualization?.yRange || [-5, 5],
+    zRange: config.visualization?.zRange || [0, 25],
+    colorScheme: config.visualization?.colorScheme || 'viridis',
+    formula2D: config.visualization?.formula2D
+  };
 }
 
 /**

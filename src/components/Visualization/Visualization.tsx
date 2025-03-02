@@ -7,6 +7,7 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ThreeDRotationIcon from '@mui/icons-material/ThreeDRotation';
 import { Algorithm } from '../../algorithms/Algorithm';
 import { Individual as AlgorithmIndividual, AlgorithmParams } from '../../types';
+import { getFunctionVisualizationConfig, getFunctionDetails } from '../../problems/ContinuousFunctions';
 
 interface VisualizationProps {
   problem: string | null;
@@ -30,6 +31,28 @@ interface Individual {
   fitness: number;
 }
 
+// Interface for function visualization configuration
+interface FunctionVisualizationConfig {
+  xRange: [number, number];
+  yRange: [number, number];
+  zRange: [number, number];
+  colorScheme: string;
+  formula2D: string;
+}
+
+// Helper function to dynamically evaluate 2D function formula from string
+const evaluateFormula = (formula: string, x: number, y: number): number => {
+  try {
+    // Create a function to evaluate the formula in a safe context
+    // This avoids using eval() directly
+    const func = new Function('x', 'y', 'Math', `return ${formula};`);
+    return func(x, y, Math);
+  } catch (error) {
+    console.error('Error evaluating function formula:', error);
+    return 0;
+  }
+};
+
 const Visualization: FC<VisualizationProps> = ({ 
   problem, 
   algorithm, 
@@ -47,6 +70,8 @@ const Visualization: FC<VisualizationProps> = ({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const frameIdRef = useRef<number | null>(null);
+  const [functionConfig, setFunctionConfig] = useState<FunctionVisualizationConfig | null>(null);
+  const [functionDetails, setFunctionDetails] = useState<any | null>(null);
 
   // Handle view mode change
   const handleViewModeChange = (
@@ -57,6 +82,39 @@ const Visualization: FC<VisualizationProps> = ({
       setViewMode(newViewMode);
     }
   };
+
+  // Load function configuration when problem changes
+  useEffect(() => {
+    if (!problem) {
+      setFunctionConfig(null);
+      setFunctionDetails(null);
+      return;
+    }
+
+    const loadFunctionConfig = async () => {
+      try {
+        const config = await getFunctionVisualizationConfig(problem);
+        const details = await getFunctionDetails(problem);
+        console.log('Loaded function config:', config);
+        console.log('Loaded function details:', details);
+        
+        if (config && config.formula2D) {
+          setFunctionConfig(config as FunctionVisualizationConfig);
+        } else {
+          console.error('Function configuration missing or invalid for:', problem);
+          setFunctionConfig(null);
+        }
+        
+        setFunctionDetails(details);
+      } catch (error) {
+        console.error('Error loading function configuration:', error);
+        setFunctionConfig(null);
+        setFunctionDetails(null);
+      }
+    };
+
+    loadFunctionConfig();
+  }, [problem]);
 
   // Use layout effect to get accurate dimensions
   useLayoutEffect(() => {
@@ -87,48 +145,51 @@ const Visualization: FC<VisualizationProps> = ({
   useEffect(() => {
     console.log('Visualization useEffect - problem/algorithm/viewMode/params changed:', problem, algorithm, viewMode, algorithmParams?.populationSize);
     
-    if (!problem) return;
+    if (!problem || !functionConfig) return;
 
-    if (viewMode === '2d') {
-      if (!svgRef.current) return;
-      
-      // Clear previous visualizations
-      d3.select(svgRef.current).selectAll('*').remove();
-
-      // Set SVG dimensions
-      const width = dimensions.width || 600;
-      const height = dimensions.height || 400;
-      
-      console.log('Setting SVG dimensions:', width, height);
-      
-      d3.select(svgRef.current)
-        .attr('width', width)
-        .attr('height', height);
-
-      // Create visualization based on problem type
-      switch (problem) {
-        case 'sphere':
-        case 'rastrigin':
-        case 'rosenbrock':
-        case 'ackley':
-        case 'schwefel222':
-          create2DFunctionVisualization(problem);
-          break;
-        default:
-          createPlaceholderVisualization();
-      }
-
-      // Update visualization with current step data
-      updateVisualization(currentStep);
-    } else {
-      // Clean up 2D visualization
-      if (svgRef.current) {
+    // Using an async function inside useEffect
+    const setupVisualization = async () => {
+      if (viewMode === '2d') {
+        if (!svgRef.current) return;
+        
+        // Clear previous visualizations
         d3.select(svgRef.current).selectAll('*').remove();
+
+        // Set SVG dimensions
+        const width = dimensions.width || 600;
+        const height = dimensions.height || 400;
+        
+        console.log('Setting SVG dimensions:', width, height);
+        
+        d3.select(svgRef.current)
+          .attr('width', width)
+          .attr('height', height);
+
+        // Create visualization for optimization functions
+        try {
+          await create2DFunctionVisualization();
+          // Update visualization with current step data
+          updateVisualization(currentStep);
+        } catch (error) {
+          console.error('Error creating 2D visualization:', error);
+          createPlaceholderVisualization();
+        }
+      } else {
+        // Clean up 2D visualization
+        if (svgRef.current) {
+          d3.select(svgRef.current).selectAll('*').remove();
+        }
+        
+        // Set up 3D visualization
+        try {
+          await setup3DVisualization();
+        } catch (error) {
+          console.error('Error setting up 3D visualization:', error);
+        }
       }
-      
-      // Set up 3D visualization
-      setup3DVisualization(problem);
-    }
+    };
+
+    setupVisualization();
 
     // Cleanup function
     return () => {
@@ -137,11 +198,11 @@ const Visualization: FC<VisualizationProps> = ({
         cleanup3DVisualization();
       }
     };
-  }, [problem, algorithm, dimensions, viewMode, algorithmParams]);
+  }, [problem, algorithm, dimensions, viewMode, algorithmParams, functionConfig]);
 
   // Add a specific effect to update visualization when the algorithm instance changes
   useEffect(() => {
-    if (!problem || !algorithm || !algorithmInstance) return;
+    if (!problem || !algorithm || !algorithmInstance || !functionConfig) return;
     
     console.log('Algorithm instance changed or updated, forcing visualization update');
     
@@ -151,12 +212,12 @@ const Visualization: FC<VisualizationProps> = ({
     } else {
       update3DVisualization(currentStep);
     }
-  }, [algorithmInstance, currentStep, problem, algorithm, viewMode]);
+  }, [algorithmInstance, currentStep, problem, algorithm, viewMode, functionConfig]);
 
   // Update visualization when step changes
   useEffect(() => {
     console.log('Visualization useEffect - step changed:', currentStep);
-    if (!problem) return;
+    if (!problem || !functionConfig) return;
     
     if (viewMode === '2d') {
       if (!svgRef.current) return;
@@ -164,11 +225,11 @@ const Visualization: FC<VisualizationProps> = ({
     } else {
       update3DVisualization(currentStep);
     }
-  }, [currentStep, problem, viewMode, algorithmParams]);
+  }, [currentStep, problem, viewMode, algorithmParams, functionConfig]);
 
   // Effect to re-render visualization when dimensions change
   useEffect(() => {
-    if (dimensions.width > 0 && dimensions.height > 0 && problem) {
+    if (dimensions.width > 0 && dimensions.height > 0 && problem && functionConfig) {
       console.log('Dimensions changed, re-rendering visualization');
       
       if (viewMode === '2d') {
@@ -182,18 +243,8 @@ const Visualization: FC<VisualizationProps> = ({
           .attr('width', dimensions.width)
           .attr('height', dimensions.height);
         
-        // Create visualization based on problem type
-        switch (problem) {
-          case 'sphere':
-          case 'rastrigin':
-          case 'rosenbrock':
-          case 'ackley':
-          case 'schwefel222':
-            create2DFunctionVisualization(problem);
-            break;
-          default:
-            createPlaceholderVisualization();
-        }
+        // Create visualization
+        create2DFunctionVisualization();
         
         // Update visualization with current step data
         updateVisualization(currentStep);
@@ -206,11 +257,11 @@ const Visualization: FC<VisualizationProps> = ({
         }
       }
     }
-  }, [dimensions, problem, currentStep, viewMode]);
+  }, [dimensions, problem, currentStep, viewMode, functionConfig]);
 
   // Add a specific effect to force re-rendering when params change
   useEffect(() => {
-    if (!problem || !algorithm || !algorithmInstance) return;
+    if (!problem || !algorithm || !algorithmInstance || !functionConfig) return;
     
     console.log('Algorithm params changed, forcing visualization update. Population size:', algorithmParams?.populationSize);
     
@@ -229,7 +280,7 @@ const Visualization: FC<VisualizationProps> = ({
         }
       }
     }, 50); // Small delay to ensure algorithm state is fully updated
-  }, [algorithmParams, algorithm, problem, algorithmInstance]);
+  }, [algorithmParams, algorithm, problem, algorithmInstance, functionConfig]);
 
   // Add a new effect to handle 3D rendering issues related to timing
   useEffect(() => {
@@ -259,9 +310,9 @@ const Visualization: FC<VisualizationProps> = ({
   }, [viewMode, dimensions]);
 
   // Create a 2D function visualization
-  const create2DFunctionVisualization = (problemType: string) => {
-    console.log('Creating 2D function visualization for:', problemType);
-    if (!svgRef.current) return;
+  const create2DFunctionVisualization = async () => {
+    console.log('Creating 2D function visualization');
+    if (!svgRef.current || !functionConfig) return;
 
     const svg = d3.select(svgRef.current);
     const width = dimensions.width || 600;
@@ -271,32 +322,10 @@ const Visualization: FC<VisualizationProps> = ({
     const innerHeight = height - margin.top - margin.bottom;
 
     console.log('Visualization dimensions:', width, height, innerWidth, innerHeight);
-
-    // Define domain ranges based on problem type
-    let xRange = [-5, 5];
-    let yRange = [-5, 5];
     
-    switch (problemType) {
-      case 'rastrigin':
-        xRange = [-5.12, 5.12];
-        yRange = [-5.12, 5.12];
-        break;
-      case 'rosenbrock':
-        xRange = [-2, 2];
-        yRange = [-1, 3];
-        break;
-      case 'ackley':
-        xRange = [-5, 5];
-        yRange = [-5, 5];
-        break;
-      case 'schwefel222':
-        xRange = [-10, 10];
-        yRange = [-10, 10];
-        break;
-      default: // sphere
-        xRange = [-5, 5];
-        yRange = [-5, 5];
-    }
+    // Define domain ranges from function configuration
+    const xRange = functionConfig.xRange;
+    const yRange = functionConfig.yRange;
 
     // Create scales
     const xScale = d3.scaleLinear()
@@ -319,28 +348,9 @@ const Visualization: FC<VisualizationProps> = ({
       for (let j = 0; j < resolution; j++) {
         const x = xRange[0] + (xRange[1] - xRange[0]) * (i / (resolution - 1));
         const y = yRange[0] + (yRange[1] - yRange[0]) * (j / (resolution - 1));
-        let z = 0;
         
-        // Calculate z value based on problem type
-        switch (problemType) {
-          case 'sphere':
-            z = x * x + y * y;
-            break;
-          case 'rastrigin':
-            z = 20 + (x * x - 10 * Math.cos(2 * Math.PI * x)) + (y * y - 10 * Math.cos(2 * Math.PI * y));
-            break;
-          case 'rosenbrock':
-            z = 100 * Math.pow(y - x * x, 2) + Math.pow(1 - x, 2);
-            break;
-          case 'ackley':
-            z = -20 * Math.exp(-0.2 * Math.sqrt(0.5 * (x * x + y * y))) - 
-                Math.exp(0.5 * (Math.cos(2 * Math.PI * x) + Math.cos(2 * Math.PI * y))) + 
-                Math.E + 20;
-            break;
-          case 'schwefel222':
-            z = Math.abs(x) + Math.abs(y) + (Math.abs(x) * Math.abs(y));
-            break;
-        }
+        // Calculate z value using the formula from function configuration
+        const z = evaluateFormula(functionConfig.formula2D, x, y);
         
         points.push({ x, y, z });
       }
@@ -354,9 +364,18 @@ const Visualization: FC<VisualizationProps> = ({
     
     console.log('Z range:', zMin, zMax);
     
+    // Use color scheme from configuration if available
+    const colorInterpolator = functionConfig.colorScheme === 'viridis' ? d3.interpolateViridis :
+                             functionConfig.colorScheme === 'plasma' ? d3.interpolatePlasma :
+                             functionConfig.colorScheme === 'magma' ? d3.interpolateMagma :
+                             functionConfig.colorScheme === 'inferno' ? d3.interpolateInferno :
+                             functionConfig.colorScheme === 'cividis' ? d3.interpolateCividis :
+                             functionConfig.colorScheme === 'turbo' ? d3.interpolateTurbo :
+                             d3.interpolateViridis;
+    
     const colorScale = d3.scaleSequential()
       .domain([zMin, zMax])
-      .interpolator(d3.interpolateViridis);
+      .interpolator(colorInterpolator);
 
     // Create the heatmap
     const cellWidth = innerWidth / resolution;
@@ -425,7 +444,7 @@ const Visualization: FC<VisualizationProps> = ({
   // Update the visualization with current step data
   const updateVisualization = (step: number) => {
     console.log('Updating visualization for step:', step, 'Params:', algorithmParams?.populationSize);
-    if (!svgRef.current || !problem || !algorithm || !algorithmInstance) return;
+    if (!svgRef.current || !problem || !algorithm || !algorithmInstance || !functionConfig) return;
 
     const svg = d3.select(svgRef.current);
     
@@ -477,28 +496,9 @@ const Visualization: FC<VisualizationProps> = ({
       const innerWidth = width - margin.left - margin.right;
       const innerHeight = height - margin.top - margin.bottom;
       
-      // Define domain ranges based on problem type
-      let xRange = [-5, 5];
-      let yRange = [-5, 5];
-      
-      switch (problem) {
-        case 'rastrigin':
-          xRange = [-5.12, 5.12];
-          yRange = [-5.12, 5.12];
-          break;
-        case 'rosenbrock':
-          xRange = [-2, 2];
-          yRange = [-1, 3];
-          break;
-        case 'ackley':
-          xRange = [-5, 5];
-          yRange = [-5, 5];
-          break;
-        case 'schwefel222':
-          xRange = [-10, 10];
-          yRange = [-10, 10];
-          break;
-      }
+      // Define domain ranges from function configuration
+      const xRange = functionConfig.xRange;
+      const yRange = functionConfig.yRange;
       
       // Create scales
       const xScale = d3.scaleLinear()
@@ -529,9 +529,9 @@ const Visualization: FC<VisualizationProps> = ({
   };
 
   // Set up 3D visualization using Three.js
-  const setup3DVisualization = (problemType: string) => {
-    console.log('Setting up 3D visualization for:', problemType);
-    if (!threeContainerRef.current) return;
+  const setup3DVisualization = async () => {
+    console.log('Setting up 3D visualization');
+    if (!threeContainerRef.current || !functionConfig) return;
 
     // Ensure container has dimensions
     if (dimensions.width === 0 || dimensions.height === 0) {
@@ -581,32 +581,10 @@ const Visualization: FC<VisualizationProps> = ({
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(10, 10, 10);
     scene.add(directionalLight);
-
-    // Define domain ranges based on problem type
-    let xRange = [-5, 5];
-    let yRange = [-5, 5];
     
-    switch (problemType) {
-      case 'rastrigin':
-        xRange = [-5.12, 5.12];
-        yRange = [-5.12, 5.12];
-        break;
-      case 'rosenbrock':
-        xRange = [-2, 2];
-        yRange = [-1, 3];
-        break;
-      case 'ackley':
-        xRange = [-5, 5];
-        yRange = [-5, 5];
-        break;
-      case 'schwefel222':
-        xRange = [-10, 10];
-        yRange = [-10, 10];
-        break;
-      default: // sphere
-        xRange = [-5, 5];
-        yRange = [-5, 5];
-    }
+    // Define domain ranges from function configuration
+    const xRange = functionConfig.xRange;
+    const yRange = functionConfig.yRange;
 
     // Create a grid of points for the function
     const resolution = 50;
@@ -616,28 +594,9 @@ const Visualization: FC<VisualizationProps> = ({
       for (let j = 0; j < resolution; j++) {
         const x = xRange[0] + (xRange[1] - xRange[0]) * (i / (resolution - 1));
         const y = yRange[0] + (yRange[1] - yRange[0]) * (j / (resolution - 1));
-        let z = 0;
         
-        // Calculate z value based on problem type
-        switch (problemType) {
-          case 'sphere':
-            z = x * x + y * y;
-            break;
-          case 'rastrigin':
-            z = 20 + (x * x - 10 * Math.cos(2 * Math.PI * x)) + (y * y - 10 * Math.cos(2 * Math.PI * y));
-            break;
-          case 'rosenbrock':
-            z = 100 * Math.pow(y - x * x, 2) + Math.pow(1 - x, 2);
-            break;
-          case 'ackley':
-            z = -20 * Math.exp(-0.2 * Math.sqrt(0.5 * (x * x + y * y))) - 
-                Math.exp(0.5 * (Math.cos(2 * Math.PI * x) + Math.cos(2 * Math.PI * y))) + 
-                Math.E + 20;
-            break;
-          case 'schwefel222':
-            z = Math.abs(x) + Math.abs(y) + (Math.abs(x) * Math.abs(y));
-            break;
-        }
+        // Calculate z value using the formula from function configuration
+        const z = evaluateFormula(functionConfig.formula2D, x, y);
         
         points.push({ x, y, z });
       }
@@ -749,7 +708,7 @@ const Visualization: FC<VisualizationProps> = ({
   // Update 3D visualization with current step data
   const update3DVisualization = (step: number) => {
     console.log('Updating 3D visualization for step:', step, 'Params:', algorithmParams?.populationSize);
-    if (!sceneRef.current || !problem || !algorithm) return;
+    if (!sceneRef.current || !problem || !algorithm || !functionConfig) return;
 
     const scene = sceneRef.current;
 
@@ -805,29 +764,8 @@ const Visualization: FC<VisualizationProps> = ({
     const functionValues: number[] = [];
     
     populationData.forEach(individual => {
-      let z = 0;
-      
-      switch (problem) {
-        case 'sphere':
-          z = individual.x * individual.x + individual.y * individual.y;
-          break;
-        case 'rastrigin':
-          z = 20 + (individual.x * individual.x - 10 * Math.cos(2 * Math.PI * individual.x)) + 
-              (individual.y * individual.y - 10 * Math.cos(2 * Math.PI * individual.y));
-          break;
-        case 'rosenbrock':
-          z = 100 * Math.pow(individual.y - individual.x * individual.x, 2) + Math.pow(1 - individual.x, 2);
-          break;
-        case 'ackley':
-          z = -20 * Math.exp(-0.2 * Math.sqrt(0.5 * (individual.x * individual.x + individual.y * individual.y))) - 
-              Math.exp(0.5 * (Math.cos(2 * Math.PI * individual.x) + Math.cos(2 * Math.PI * individual.y))) + 
-              Math.E + 20;
-          break;
-        case 'schwefel222':
-          z = Math.abs(individual.x) + Math.abs(individual.y) + (Math.abs(individual.x) * Math.abs(individual.y));
-          break;
-      }
-      
+      // Calculate z value using the formula from function configuration
+      const z = evaluateFormula(functionConfig.formula2D, individual.x, individual.y);
       functionValues.push(z);
     });
     
@@ -849,7 +787,7 @@ const Visualization: FC<VisualizationProps> = ({
     
     // Add new population points
     populationData.forEach((individual, index) => {
-      // Calculate z value based on problem type
+      // Calculate z value using the formula from function configuration
       let z = functionValues[index];
       
       // Use the same scale as the function surface
@@ -912,7 +850,7 @@ const Visualization: FC<VisualizationProps> = ({
     <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h6">
-          {problem ? `${problem.charAt(0).toUpperCase() + problem.slice(1)} Function` : 'Select a Problem'}
+          {functionDetails ? functionDetails.name : 'Select a Problem'}
         </Typography>
         <ToggleButtonGroup
           value={viewMode}
