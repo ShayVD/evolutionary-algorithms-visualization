@@ -61,19 +61,50 @@ const ParameterControls: FC<ParameterControlsProps> = ({
   const handleTextFieldChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     
+    // Handle special cases for empty values
+    if (value === '') {
+      console.log(`Empty value for ${name}, using default`);
+      // Set a temporary local value but don't propagate yet
+      setLocalParams(prev => ({
+        ...prev,
+        [name]: name === 'populationSize' ? 50 : prev[name]
+      }));
+      return;
+    }
+    
     // Parse numeric values
-    const numericValue = type === 'number' ? parseFloat(value) : value;
+    let numericValue: string | number = type === 'number' ? parseFloat(value) : value;
     
-    setLocalParams(prev => ({
-      ...prev,
-      [name]: numericValue
-    }));
+    // Validate specific fields
+    if (name === 'populationSize') {
+      // If value is empty or NaN, default to 50
+      if (isNaN(numericValue as number)) {
+        numericValue = 50;
+      }
+      // Ensure minimum value of 1
+      else if ((numericValue as number) < 1) {
+        numericValue = 1;
+      }
+      
+      console.log(`Population size changed to: ${numericValue}`);
+    }
     
-    // Notify parent component of parameter changes
-    onParamChange({
+    // Update local state
+    const updatedParams = {
       ...localParams,
       [name]: numericValue
-    });
+    };
+    
+    // Set local state
+    setLocalParams(updatedParams);
+    
+    // Use a very short delay to ensure the UI reflects the change before propagating
+    // This helps prevent race conditions
+    setTimeout(() => {
+      // Immediately notify parent component of parameter changes
+      onParamChange(updatedParams);
+      console.log(`Parameter ${name} change propagated with value ${numericValue}`);
+    }, 0);
   };
 
   // Handle select changes
@@ -277,7 +308,7 @@ const ParameterControls: FC<ParameterControlsProps> = ({
             value={localParams.populationSize || 50}
             onChange={handleTextFieldChange}
             disabled={disabled}
-            InputProps={{ inputProps: { min: 10, max: 500 } }}
+            InputProps={{ inputProps: { min: 1, max: 500 } }}
             helperText="Number of individuals in the population"
           />
         </Grid>

@@ -79,7 +79,8 @@ function App() {
       stats: null,
       step: 0,
       performStep: () => console.error('Cannot perform step due to an error'),
-      resetAlgorithm: () => console.error('Cannot reset algorithm due to an error')
+      resetAlgorithm: () => console.error('Cannot reset algorithm due to an error'),
+      algorithm: null
     };
   }
 
@@ -87,7 +88,8 @@ function App() {
     stats: simulationStats,
     step: simulationStep,
     performStep,
-    resetAlgorithm
+    resetAlgorithm,
+    algorithm: algorithmInstance
   } = simulationHook;
 
   // Update app state with simulation stats
@@ -260,6 +262,8 @@ function App() {
                   problem={appState.selectedProblem}
                   algorithm={appState.selectedAlgorithm}
                   currentStep={appState.currentStep}
+                  algorithmInstance={algorithmInstance || null}
+                  algorithmParams={appState.algorithmParams}
                 />
               </Box>
             </Paper>

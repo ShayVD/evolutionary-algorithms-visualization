@@ -5,11 +5,15 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Box, Typography, Paper, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ThreeDRotationIcon from '@mui/icons-material/ThreeDRotation';
+import { Algorithm } from '../../algorithms/Algorithm';
+import { Individual as AlgorithmIndividual, AlgorithmParams } from '../../types';
 
 interface VisualizationProps {
   problem: string | null;
   algorithm: string | null;
   currentStep: number;
+  algorithmInstance: Algorithm<any> | null;
+  algorithmParams?: AlgorithmParams;
 }
 
 // Define a data point type for the function visualization
@@ -29,7 +33,9 @@ interface Individual {
 const Visualization: FC<VisualizationProps> = ({ 
   problem, 
   algorithm, 
-  currentStep
+  currentStep,
+  algorithmInstance,
+  algorithmParams
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const threeContainerRef = useRef<HTMLDivElement>(null);
@@ -77,9 +83,9 @@ const Visualization: FC<VisualizationProps> = ({
     };
   }, []);
 
-  // Effect to set up and update visualization based on problem, algorithm, and viewMode
+  // Effect to set up and update visualization based on problem, algorithm, viewMode, and params
   useEffect(() => {
-    console.log('Visualization useEffect - problem/algorithm/viewMode changed:', problem, algorithm, viewMode);
+    console.log('Visualization useEffect - problem/algorithm/viewMode/params changed:', problem, algorithm, viewMode, algorithmParams?.populationSize);
     
     if (!problem) return;
 
@@ -131,7 +137,21 @@ const Visualization: FC<VisualizationProps> = ({
         cleanup3DVisualization();
       }
     };
-  }, [problem, algorithm, dimensions, viewMode]);
+  }, [problem, algorithm, dimensions, viewMode, algorithmParams]);
+
+  // Add a specific effect to update visualization when the algorithm instance changes
+  useEffect(() => {
+    if (!problem || !algorithm || !algorithmInstance) return;
+    
+    console.log('Algorithm instance changed or updated, forcing visualization update');
+    
+    // Force update the visualization
+    if (viewMode === '2d') {
+      updateVisualization(currentStep);
+    } else {
+      update3DVisualization(currentStep);
+    }
+  }, [algorithmInstance, currentStep, problem, algorithm, viewMode]);
 
   // Update visualization when step changes
   useEffect(() => {
@@ -144,7 +164,7 @@ const Visualization: FC<VisualizationProps> = ({
     } else {
       update3DVisualization(currentStep);
     }
-  }, [currentStep, problem, viewMode]);
+  }, [currentStep, problem, viewMode, algorithmParams]);
 
   // Effect to re-render visualization when dimensions change
   useEffect(() => {
@@ -187,6 +207,29 @@ const Visualization: FC<VisualizationProps> = ({
       }
     }
   }, [dimensions, problem, currentStep, viewMode]);
+
+  // Add a specific effect to force re-rendering when params change
+  useEffect(() => {
+    if (!problem || !algorithm || !algorithmInstance) return;
+    
+    console.log('Algorithm params changed, forcing visualization update. Population size:', algorithmParams?.populationSize);
+    
+    // Allow a small delay for the algorithm to fully update its population
+    setTimeout(() => {
+      // Force immediate update of the visualization with current population data
+      if (algorithmInstance && typeof algorithmInstance.getPopulation === 'function') {
+        const currentPopulation = algorithmInstance.getPopulation();
+        console.log('Delayed refresh: actual population size from algorithm:', currentPopulation.length, 'Requested size:', algorithmParams?.populationSize);
+        
+        // Force update the visualization
+        if (viewMode === '2d') {
+          updateVisualization(currentStep);
+        } else {
+          update3DVisualization(currentStep);
+        }
+      }
+    }, 50); // Small delay to ensure algorithm state is fully updated
+  }, [algorithmParams, algorithm, problem, algorithmInstance]);
 
   // Create a 2D function visualization
   const create2DFunctionVisualization = (problemType: string) => {
@@ -354,44 +397,49 @@ const Visualization: FC<VisualizationProps> = ({
 
   // Update the visualization with current step data
   const updateVisualization = (step: number) => {
-    console.log('Updating visualization for step:', step);
-    if (!svgRef.current || !problem || !algorithm) return;
+    console.log('Updating visualization for step:', step, 'Params:', algorithmParams?.populationSize);
+    if (!svgRef.current || !problem || !algorithm || !algorithmInstance) return;
 
     const svg = d3.select(svgRef.current);
     
     // Remove any existing population points
     svg.selectAll('.population-point').remove();
     
-    // Generate some dummy population data for demonstration
-    // In a real app, this would come from the algorithm's state
-    const populationSize = 20;
-    const dummyPopulation: Individual[] = [];
+    // Get the actual population from the algorithm instance
+    let populationData: Individual[] = [];
     
-    for (let i = 0; i < populationSize; i++) {
-      // Create points that converge toward the optimum as steps increase
-      const convergenceFactor = Math.max(0.1, 1 - (step / 50));
-      const randomOffset = () => (Math.random() - 0.5) * 5 * convergenceFactor;
-      
-      let optX = 0, optY = 0;
-      if (problem === 'rosenbrock') {
-        optX = 1;
-        optY = 1;
-      }
-      
-      dummyPopulation.push({
-        x: optX + randomOffset(),
-        y: optY + randomOffset(),
-        fitness: Math.random() * 10 * convergenceFactor
+    // Directly fetch the current population to ensure we have the latest data
+    const algorithmPopulation = algorithmInstance.getPopulation();
+    console.log('Actual population size from algorithm:', algorithmPopulation.length, 'Requested size:', algorithmParams?.populationSize);
+    
+    // Only proceed with visualization if we have real data
+    if (algorithmPopulation && algorithmPopulation.length > 0) {
+      populationData = algorithmPopulation.map((individual: AlgorithmIndividual<number[]>) => {
+        // Assuming genotype is an array with at least 2 dimensions [x, y, ...]
+        return {
+          x: individual.genotype[0],
+          y: individual.genotype[1],
+          fitness: individual.fitness
+        };
       });
+    } else {
+      // If no real data, early return
+      console.log('No real population data available yet. Waiting for data before visualization.');
+      return;
     }
     
+    console.log('Final population size for visualization:', populationData.length);
+
     // Get the best individual (lowest fitness for minimization problems)
-    const bestIndividual = dummyPopulation.reduce(
-      (best, current) => current.fitness < best.fitness ? current : best,
-      dummyPopulation[0]
-    );
+    const bestIndividual = populationData.length > 0 ? 
+      populationData.reduce(
+        (best, current) => current.fitness < best.fitness ? current : best,
+        populationData[0]
+      ) : null;
     
-    console.log('Generated population with best fitness:', bestIndividual.fitness);
+    if (bestIndividual) {
+      console.log('Population with best fitness:', bestIndividual.fitness);
+    }
     
     // Add population points to the visualization
     const g = svg.select('g');
@@ -436,15 +484,15 @@ const Visualization: FC<VisualizationProps> = ({
       
       // Add population points
       g.selectAll('.population-point')
-        .data(dummyPopulation)
+        .data(populationData)
         .enter()
         .append('circle')
         .attr('class', 'population-point')
         .attr('cx', d => xScale(d.x))
         .attr('cy', d => yScale(d.y))
         .attr('r', 4)
-        .attr('fill', d => d === bestIndividual ? 'red' : 'white')
-        .attr('stroke', d => d === bestIndividual ? 'none' : 'rgba(255,255,255,0.7)')
+        .attr('fill', d => bestIndividual && d === bestIndividual ? 'red' : 'white')
+        .attr('stroke', d => bestIndividual && d === bestIndividual ? 'none' : 'rgba(255,255,255,0.7)')
         .attr('stroke-width', 1);
         
       console.log('Population points added to visualization');
@@ -664,48 +712,63 @@ const Visualization: FC<VisualizationProps> = ({
 
   // Update 3D visualization with current step data
   const update3DVisualization = (step: number) => {
-    console.log('Updating 3D visualization for step:', step);
+    console.log('Updating 3D visualization for step:', step, 'Params:', algorithmParams?.populationSize);
     if (!sceneRef.current || !problem || !algorithm) return;
 
     const scene = sceneRef.current;
-    
+
     // Remove any existing population points
-    const existingPoints = scene.children.filter(child => child.name === 'populationPoint');
-    existingPoints.forEach(point => scene.remove(point));
-    
-    // Generate some dummy population data for demonstration
-    // In a real app, this would come from the algorithm's state
-    const populationSize = 20;
-    const dummyPopulation: Individual[] = [];
-    
-    for (let i = 0; i < populationSize; i++) {
-      // Create points that converge toward the optimum as steps increase
-      const convergenceFactor = Math.max(0.1, 1 - (step / 50));
-      const randomOffset = () => (Math.random() - 0.5) * 5 * convergenceFactor;
-      
-      let optX = 0, optY = 0;
-      if (problem === 'rosenbrock') {
-        optX = 1;
-        optY = 1;
+    const pointsToRemove: THREE.Object3D[] = [];
+    scene.traverse((obj) => {
+      if (obj.userData.type === 'population') {
+        pointsToRemove.push(obj);
       }
+    });
+    
+    pointsToRemove.forEach(obj => scene.remove(obj));
+    
+    // Get the actual population from the algorithm instance
+    let populationData: Individual[] = [];
+    
+    if (algorithmInstance && typeof algorithmInstance.getPopulation === 'function') {
+      // Convert from algorithm-specific data format to visualization format
+      const algorithmPopulation = algorithmInstance.getPopulation();
+      console.log('Actual 3D population size from algorithm:', algorithmPopulation.length, 'Requested size:', algorithmParams?.populationSize);
       
-      dummyPopulation.push({
-        x: optX + randomOffset(),
-        y: optY + randomOffset(),
-        fitness: Math.random() * 10 * convergenceFactor
-      });
+      // Only proceed with visualization if we have real data
+      if (algorithmPopulation && algorithmPopulation.length > 0) {
+        populationData = algorithmPopulation.map((individual: AlgorithmIndividual<number[]>) => {
+          // Assuming genotype is an array with at least 2 dimensions [x, y, ...]
+          return {
+            x: individual.genotype[0],
+            y: individual.genotype[1],
+            fitness: individual.fitness
+          };
+        });
+      } else {
+        // If no real data, early return
+        console.log('No real population data available yet for 3D. Waiting for data before visualization.');
+        return;
+      }
+    } else {
+      // If no algorithm instance or getPopulation method, early return
+      console.log('Algorithm instance or getPopulation method not available for 3D. Waiting before visualization.');
+      return;
     }
     
+    console.log('Final 3D population size for visualization:', populationData.length);
+
     // Get the best individual (lowest fitness for minimization problems)
-    const bestIndividual = dummyPopulation.reduce(
-      (best, current) => current.fitness < best.fitness ? current : best,
-      dummyPopulation[0]
-    );
+    const bestIndividual = populationData.length > 0 ? 
+      populationData.reduce(
+        (best, current) => current.fitness < best.fitness ? current : best,
+        populationData[0]
+      ) : null;
     
     // Calculate function values for all points to determine z-scale
     const functionValues: number[] = [];
     
-    dummyPopulation.forEach(individual => {
+    populationData.forEach(individual => {
       let z = 0;
       
       switch (problem) {
@@ -748,8 +811,8 @@ const Visualization: FC<VisualizationProps> = ({
     const surfaceMinZ = Math.min(...zValues);
     const surfaceMaxZ = Math.max(...zValues);
     
-    // Add population points to the 3D visualization
-    dummyPopulation.forEach((individual, index) => {
+    // Add new population points
+    populationData.forEach((individual, index) => {
       // Calculate z value based on problem type
       let z = functionValues[index];
       
@@ -809,92 +872,43 @@ const Visualization: FC<VisualizationProps> = ({
   };
 
   return (
-    <Box sx={{ position: 'relative', height: '100%' }}>
-      {/* View mode toggle */}
-      <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 10 }}>
+    <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6">
+          {problem ? `${problem.charAt(0).toUpperCase() + problem.slice(1)} Function` : 'Select a Problem'}
+        </Typography>
         <ToggleButtonGroup
           value={viewMode}
           exclusive
           onChange={handleViewModeChange}
-          aria-label="view mode"
+          aria-label="visualization mode"
           size="small"
         >
-          <ToggleButton value="2d" aria-label="2D view">
-            <ViewModuleIcon />
+          <ToggleButton value="2d" aria-label="2D mode">
+            <ViewModuleIcon fontSize="small" />
           </ToggleButton>
-          <ToggleButton value="3d" aria-label="3D view">
-            <ThreeDRotationIcon />
+          <ToggleButton value="3d" aria-label="3D mode">
+            <ThreeDRotationIcon fontSize="small" />
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>
-      
-      {/* Main visualization area */}
-      <Box 
-        ref={containerRef}
-        sx={{ 
-          width: '100%', 
-          height: '100%', 
-          bgcolor: 'background.paper',
-          borderRadius: 1,
-          overflow: 'hidden'
-        }}
-      >
-        {/* 2D Visualization */}
-        {viewMode === '2d' && (
-          <svg 
-            ref={svgRef} 
-            style={{ 
-              width: '100%', 
-              height: '100%', 
-              display: 'block' 
-            }}
-          />
-        )}
-        
-        {/* 3D Visualization */}
-        {viewMode === '3d' && (
-          <div 
-            ref={threeContainerRef} 
-            style={{ 
-              width: '100%', 
-              height: '100%', 
-              display: 'block' 
-            }}
-          />
-        )}
-      </Box>
-      
-      {/* Status indicator */}
-      {(!problem || !algorithm) && (
-        <Box 
-          sx={{ 
-            position: 'absolute', 
-            bottom: 16, 
-            left: 0, 
-            right: 0, 
-            textAlign: 'center' 
-          }}
-        >
-          <Paper 
-            elevation={2} 
-            sx={{ 
-              display: 'inline-block', 
-              px: 2, 
-              py: 1, 
-              bgcolor: 'rgba(255,255,255,0.9)' 
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              {!problem 
-                ? 'Select a problem to begin' 
-                : !algorithm 
-                  ? 'Select an algorithm to begin' 
-                  : 'Ready to run'}
-            </Typography>
-          </Paper>
+
+      {!problem && (
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Typography variant="body1">Select a problem to visualize</Typography>
         </Box>
       )}
-    </Box>
+
+      {problem && (
+        <Box ref={containerRef} sx={{ flexGrow: 1, position: 'relative' }}>
+          {viewMode === '2d' ? (
+            <svg ref={svgRef} width={dimensions.width} height={dimensions.height} />
+          ) : (
+            <div ref={threeContainerRef} style={{ width: '100%', height: '100%' }} />
+          )}
+        </Box>
+      )}
+    </Paper>
   );
 };
 

@@ -44,6 +44,11 @@ export class EvolutionStrategy implements Algorithm<number[]> {
    * Initialize the algorithm with custom parameters
    */
   initialize(params: AlgorithmParams): void {
+    // Keep mu synchronized with populationSize if it's specified
+    if (params.populationSize && (!params.mu || params.mu !== params.populationSize)) {
+      params = { ...params, mu: params.populationSize };
+    }
+    
     this.params = { ...this.params, ...params };
     this.reset();
   }

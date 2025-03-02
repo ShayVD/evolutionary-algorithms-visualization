@@ -52,12 +52,18 @@ export class GeneticAlgorithm implements Algorithm<number[]> {
   initializePopulation(): Individual<number[]>[] {
     this.population = [];
     
-    for (let i = 0; i < this.params.populationSize; i++) {
+    // Ensure population size is valid
+    const populationSize = Math.max(1, this.params.populationSize || 50);
+    
+    for (let i = 0; i < populationSize; i++) {
       const genotype = this.problem.generateRandomSolution();
       const fitness = this.evaluateFitness(genotype);
       
       this.population.push({ genotype, fitness });
     }
+    
+    // Find the best individual
+    this.best = this.findBest();
     
     // Initial population stats
     this.updateStats();
@@ -370,13 +376,22 @@ export class GeneticAlgorithm implements Algorithm<number[]> {
    * Update the algorithm statistics
    */
   private updateStats(): void {
-    const currentBest = this.findBest();
-    
-    // Update best if better than previously found best
-    if (!this.best || currentBest.fitness > this.best.fitness) {
-      this.best = currentBest;
+    // Safety check - if population is empty, initialize with defaults
+    if (this.population.length === 0 || !this.best) {
+      this.stats = {
+        currentGeneration: this.generation,
+        bestFitness: 0,
+        averageFitness: 0,
+        diversityMeasure: 0,
+        history: {
+          bestFitness: this.stats ? [...this.stats.history.bestFitness, 0] : [0],
+          averageFitness: this.stats ? [...this.stats.history.averageFitness, 0] : [0],
+          diversity: this.stats ? [...this.stats.history.diversity, 0] : [0]
+        }
+      };
+      return;
     }
-    
+
     // Calculate average fitness
     const totalFitness = this.population.reduce((sum, ind) => sum + ind.fitness, 0);
     const averageFitness = totalFitness / this.population.length;

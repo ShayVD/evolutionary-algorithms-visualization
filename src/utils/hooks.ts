@@ -39,6 +39,11 @@ export function useEvolutionarySimulation(
             if (newAlgorithm) {
               // Initialize the algorithm with the parameters
               newAlgorithm.initialize(params);
+              
+              // Immediately initialize the population to ensure data is available
+              newAlgorithm.initializePopulation();
+              console.log('Initial population size:', newAlgorithm.getPopulation().length);
+              
               setStats(newAlgorithm.getStats());
               setStep(0);
             }
@@ -60,12 +65,50 @@ export function useEvolutionarySimulation(
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [problemId, algorithmId, params]);
+  }, [problemId, algorithmId]);
 
   // Handle parameter updates for existing algorithm
   useEffect(() => {
     if (algorithm) {
+      // Debug: log parameter changes
+      console.log('Parameter change detected:', params);
+      
+      // Stop any running animation first
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      
+      // Update algorithm with new parameters in a specific order
       algorithm.setParams(params);
+      
+      // Force a complete reset and reinitialize
+      algorithm.reset();
+      
+      // Explicitly initialize the population with the new size
+      // This is the key step that ensures population size is correct
+      algorithm.initializePopulation();
+      
+      // Double-check population size is correct
+      const populationSize = algorithm.getPopulation().length;
+      console.log(`Confirmed new population size: ${populationSize}, expected: ${params.populationSize}`);
+      
+      // If there's still a mismatch, try to force it (safety check)
+      if (populationSize !== params.populationSize) {
+        console.warn(`Population size mismatch detected. Forcing reinitialize...`);
+        algorithm.reset();
+        algorithm.initializePopulation();
+      }
+      
+      // Now update the stats with the new population
+      const updatedStats = algorithm.getStats();
+      
+      // Update state in a single synchronous batch
+      setStats(updatedStats);
+      setStep(0);
+      
+      // Log final size for debugging
+      console.log(`Final population size after reset: ${algorithm.getPopulation().length}`);
     }
   }, [params]);
 
@@ -78,6 +121,16 @@ export function useEvolutionarySimulation(
       const updateInterval = 1000 / speed; // milliseconds between updates
 
       if (timestamp - lastUpdateTimeRef.current >= updateInterval) {
+        // Check if the algorithm has reached max generations or has converged
+        if (algorithm.hasConverged()) {
+          // Stop the animation if the algorithm has converged
+          if (animationFrameRef.current !== null) {
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
+          }
+          return;
+        }
+
         // Perform one step of the algorithm
         algorithm.step();
         setStats(algorithm.getStats());
@@ -105,9 +158,12 @@ export function useEvolutionarySimulation(
   // Function to perform a single step manually
   const performStep = () => {
     if (algorithm) {
-      algorithm.step();
-      setStats(algorithm.getStats());
-      setStep((prevStep) => prevStep + 1);
+      // Check if the algorithm has converged before performing another step
+      if (!algorithm.hasConverged()) {
+        algorithm.step();
+        setStats(algorithm.getStats());
+        setStep((prevStep) => prevStep + 1);
+      }
     }
   };
 
